@@ -3,7 +3,7 @@ server-side Java objects via an HTTP transport. Mwanzia keeps the semantics
 on the client as similar as possible to the server-side, and in general aims
 to make programming on the client feel like you're programming on the server.
 
-Unlike [http://code.google.com/webtoolkit/ GWT], Mwanzia is not a
+Unlike [GWT](http://code.google.com/webtoolkit/), Mwanzia is not a
 UI framework. Consequently, the server-side Java code does not need to
 contain any UI-related logic or configuration. This makes Mwanzia suitable
 for binding directly from a JavaScript UI to a domain model without needing
