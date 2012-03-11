@@ -157,4 +157,4 @@ Mwanzia has a number of JavaScript dependencies.
     
 ### What Goes On Under the Covers
 
-<img src="http://www.websequencediagrams.com/cgi-bin/cdraw?lz=VXNlci0-QnJvd3Nlcjogb3BlbiBwYWdlCgAMBy0-V2ViIFNlcnZlcjogL2xpc3RfYWNjb3VudHMuaHRtbAoAFgoAPQtzdGF0aWMgSFRNTABACk13YW56aWFTZXJ2bGV0OiAvanMvcwBVBS5qcwoAEA4AgQkLSmF2YVNjcmlwdCBkb21haW4gbW9kZWwAgRgKQQCBCgYgKEpTKTogbGlzdCgpCgAJDAAYCwCBRAYAFBMAEgcAPhAAgWQIIGFzIEpTT04ASQ8AgjAJABcRAII3CQCCUwliaW5kAEYKaW50byBET00KAIJzD2NsaWNrIGNsb3MAgnkLAIFaCDUAgV0HABoFAIFaCwASBgAbDQCBYAkAGRMAgVsRAFAIdXBkYXRlAIEdCQBPEQCEHwkAGRAAgVcXAEEPAIFsCQ&s=modern-blue" alt="Example Sequence Diagram" />
+![Example Sequence Diagram](https://github.com/pwjazz/mwanzia/docs/img/example_sequence_diagram.png)
