@@ -11,8 +11,8 @@ logic or configuration. This makes Mwanzia suitable for binding directly from a
 JavaScript UI to a domain model without needing to create any server-side
 UI components.
 
-For a full example, see [Java Demo Code](https://github.com/pwjazz/mwanzia/tree/master/src/test)
-and [JavaScript Demo Code](https://github.com/pwjazz/mwanzia/blob/master/WebContent/core_tests.html).
+For a full example, see the [JavaScript Demo Code](https://github.com/pwjazz/mwanzia/blob/master/WebContent/core_tests.html) and the corresponding [Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test)
+and .
 Otherwise, read on.
 
 ## Contrived Example
