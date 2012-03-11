@@ -1,20 +1,20 @@
---------------------------------- OVERVIEW ---------------------------------
+Mwanzia provides a mechanism for seamless remote binding from JavaScript to
+server-side Java objects via an HTTP transport. Mwanzia keeps the semantics
+on the client as similar as possible to the server-side, and in general aims
+to make programming on the client feel like you're programming on the server.
 
-   Mwanzia provides a mechanism for seamless remote binding from JavaScript to
-   server-side Java objects via an HTTP transport. Mwanzia keeps the semantics
-   on the client as similar as possible to the server-side, and in general aims
-   to make programming on the client feel like you're programming on the server.
+Unlike http://code.google.com/webtoolkit/"GWT, Mwanzia is not a
+UI framework. Consequently, the server-side Java code does not need to
+contain any UI-related logic or configuration. This makes Mwanzia suitable
+for binding directly from a JavaScript UI to a domain model without needing
+to create any server-side UI components.
 
-   Unlike <a href="http://code.google.com/webtoolkit/">GWT</a>, Mwanzia is not a
-   UI framework. Consequently, the server-side Java code does not need to
-   contain any UI-related logic or configuration. This makes Mwanzia suitable
-   for binding directly from a JavaScript UI to a domain model without needing
-   to create any server-side UI components.
-   
-   --------------------------------- EXAMPLE -----------------------------------
+Example
+=======
 
-   Java Code:
-   
+Java Code
+---------
+
     package org.mwanzia.demo;
         
     /**
@@ -56,7 +56,8 @@
         }
     } 
     
-   JavaScript Code:
+JavaScript Code
+---------------
    
     // Import top level package names so that you can use them
     // (e.g. org.mwanzia.demo)
