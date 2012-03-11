@@ -157,4 +157,4 @@ Mwanzia has a number of JavaScript dependencies.
     
 ### What Goes On Under the Covers
 
-![Example Sequence Diagram](https://github.com/pwjazz/mwanzia/docs/img/example_sequence_diagram.png)
+![Example Sequence Diagram](https://github.com/pwjazz/mwanzia/raw/master/docs/img/example_sequence_diagram.png)
