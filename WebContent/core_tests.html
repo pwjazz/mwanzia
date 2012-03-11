@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Core and JPA Tests for Mwanzia</title>
+        <!-- Required JavaScript Libraries -->
+        <script type="text/javascript" src="/js/console.js"></script>
+        <script type="text/javascript">
+            console.clear();
+        </script>
+        <script type="text/javascript" src="/js/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript" src="/js/json2.js"></script>
+        <script type="text/javascript" src="/js/typesystem.js"></script>
+        <script type="text/javascript" src="/js/date.format.js"></script>
+        <script type="text/javascript" src="/js/mwanzia.core.js"></script>
+        <!-- JPA Plugin -->
+        <script type="text/javascript" src="/js/mwanzia.jpa.js"></script>
+        <!-- Validation Plugin -->
+        <script type="text/javascript" src="/js/mwanzia.validation.js"></script>
+        <!-- The dynamically created server.js -->
+        <script type="text/javascript" src="/server.js"></script>
+        <!-- Testing Library -->
+        <script type="text/javascript" src="/js/easyunit.js">
+        </script>
+        <script type="text/javascript">
+            mwanziaImport();
+            mwanziaImportPackage(org.mwanzia.test);
+            
+            var easyunit_tests = {
+                "Verify Class Definitions": function(){
+                    assertEquals("Static method", "function", typeof(Company.create));
+                    assertEquals("Static method parameter name", "name", Company.create.parameterOrder[0]);
+                    assertEquals("Static method parameter type", "java.lang.String", Company.create.parameters["name"].type);
+                    assertEquals("Instance method", "function", typeof(Company.prototype.newBranch));
+                    assertEquals("Instance method parameter name", "manager", Company.prototype.newBranch.parameterOrder[0]);
+                    assertEquals("Instance method parameter name", "name", Company.prototype.newBranch.parameterOrder[1]);
+                    assertEquals("Instance method parameter name", "address", Company.prototype.newBranch.parameterOrder[2]);
+                    assertEquals("Instance method parameter type", "org.mwanzia.test.Employee", Company.prototype.newBranch.parameters["manager"].type);
+                    assertEquals("Instance method parameter type", "java.lang.String", Company.prototype.newBranch.parameters["name"].type);
+                    assertEquals("Instance method parameter type", "org.mwanzia.test.Address", Company.prototype.newBranch.parameters["address"].type);
+                    assertEquals("Number of states", 3, TestApplication.states.length);
+                    assertEquals("2nd State", "NY", TestApplication.states[1]);
+                    assertTrue("*** TEST COMPLETED SUCCESSFULLY ***", true);
+                },
+                
+                "Exercise API": function(){
+                	console.debug("Log in without required parameter");
+                	TestApplication.login().catchException({
+                        "org.mwanzia.extras.validation.ValidationException": function(exception){
+                            assertTrue("ValidationException was thrown for missing password", true);
+                        	console.debug("Log in");
+                            TestApplication.login("testuser", "password").success(function() {
+                            	console.debug("Delete all companies");
+                                Company.deleteAll().success(function(response){
+                                    assertTrue("Void response should be null", response == null);
+                                    console.debug("Create a new company");
+                                    var companyName = "Company " + Math.floor(Math.random() * 10001);
+                                    Company.create(companyName).success(function(company){
+                                        assertTrue("Company type", company instanceof Company);
+                                        assertEquals("Company name", companyName, company.name);
+                                        console.debug("Hire someone");
+                                        company.hire("First", "Manager").success(function(manager){
+                                            assertTrue("Manager type", manager instanceof Employee);
+                                            assertTrue("Manager inheritance from Person", manager instanceof Person);
+                                            assertEquals("Manager name", "First Manager", manager.firstName + " " + manager.lastName);
+                                            console.debug("Open a branch with invalid address");
+                                            company.newBranch(manager.byReference(), "Austin Branch", new Address({
+                                                line1: "2110 Slaughter Lane",
+                                                city: "Austin",
+                                                state: "TX",
+                                                postalCode: "787489"
+                                            })).success(function() {
+                                            	assertTrue("ValidationException wasn't thrown for too long postalCode", false);
+                                            }).catchException({
+                                                "org.mwanzia.extras.validation.ValidationException": function(exception){
+                                                    assertTrue("ValidationException was thrown for too long postalCode", true);
+                                                    console.debug(exception);
+                                                    console.debug("Open a branch with valid address");
+                                                    company.newBranch(manager.byReference(), "Austin Branch", new Address({
+                                                        line1: "2110 Slaughter Lane",
+                                                        city: "Austin",
+                                                        state: "TX",
+                                                        postalCode: "78748"
+                                                    })).success(function(branch){
+                                                        assertTrue("Branch type", branch instanceof Branch);
+                                                        assertEquals("Branch name", "Austin Branch", branch.name);
+                                                        assertEquals("Branch address", "2110 Slaughter Lane", branch.address.line1);
+                                                        assertEquals("Branch state", "TX", branch.address.state);
+                                                        assertEquals("Branch manager id", manager.id, branch.manager.id);
+                                                        assertEquals("Branch manager name", manager.firstName + " " + manager.lastName, branch.manager.firstName + " " + branch.manager.lastName);
+                                                        console.debug("Open another branch of the same company, but using ids instead of the original classes");
+                                                        console.debug("and using named arguments instead of positional arguments");
+                                                        new Company({
+                                                            id: company.id
+                                                        }).newBranch({
+                                                        	name: "Austin Branch 2",
+                                                        	manager: manager.id,
+                                                            address: {
+                                                                line1: "2110 Slaughter Lane",
+                                                                city: "Austin",
+                                                                state: "TX",
+                                                                postalCode: "78748"
+                                                            }
+                                                        }).useNamedArgs().success(function(secondBranch){
+                                                            assertTrue("2nd Branch type", secondBranch instanceof Branch);
+                                                            assertEquals("2nd Branch name", "Austin Branch 2", secondBranch.name);
+                                                            assertEquals("2nd Branch address", "2110 Slaughter Lane", secondBranch.address.line1);
+                                                            assertEquals("2nd Branch state", "TX", secondBranch.address.state);
+                                                            assertEquals("2nd Branch manager id", manager.id, secondBranch.manager.id);
+                                                            assertEquals("2nd Branch manager name", manager.firstName + " " + manager.lastName, secondBranch.manager.firstName + " " + secondBranch.manager.lastName);
+                                                            // Pass a managed entity (Customer) by value
+                                                            secondBranch.openAccount({
+                                                                firstName: "Percy",
+                                                                lastName: "Wegmann",
+                                                                ssn: "123-45-6701",
+                                                                age: 27,
+                                                                address: {
+                                                                    line1: "2110 Slaughter Lane",
+                                                                    city: "Austin",
+                                                                    state: "TX",
+                                                                    postalCode: "78748"
+                                                                }
+                                                            }).success(function(account){
+                                                                assertTrue("Account has owner", account.owner != null);
+                                                                var invocation = account.getOwner();
+                                                                assertTrue("getOwner() is a LazyAjaxInvocation", invocation instanceof mwanzia.LazyAjaxInvocation);
+                                                                invocation.success(function(owner){
+                                                                    assertNotEmpty("Account number not empty", account.number);
+                                                                    assertTrue("Account now has owner", account.owner != null);
+                                                                    assertEquals("Account owner name", "Percy Wegmann", account.owner.firstName + " " + account.owner.lastName);
+                                                                    assertEquals("Account ssn undefined", "undefined", typeof(account.owner.ssn));
+                                                                    assertEquals("Account balance is zero", 0, account.balance);
+                                                                    new Transaction({
+                                                                        account: account.byReference(),
+                                                                        amount: 5.98,
+                                                                        memo: "This is a test transaction"
+                                                                    }).submit().success(function(transaction){
+                                                                        assertEquals("Transaction amount", 5.98, transaction.amount);
+                                                                        assertEquals("Transaction memo", "This is a test transaction", transaction.memo);
+                                                                        assertEquals("Transaction account", account.id, transaction.account.id);
+                                                                        assertEquals("Original account balance still zero", 0, account.balance);
+                                                                        assertEquals("New account balance", 5.98, transaction.account.balance);
+                                                                        account.reload().success(function(reloadedAccount){
+                                                                        	assertEquals("Reloaded account balance", 5.98, reloadedAccount.balance);
+                                                                            account.close().success(function(closedAccount){
+                                                                                assertTrue("Account closed", closedAccount.closed);
+                                                                                new Transaction({
+                                                                                    account: account.byReference(),
+                                                                                    amount: -10.00,
+                                                                                    memo: "This is a test debit"
+                                                                                }).submit().success(function(transaction){
+                                                                                    assertTrue("No exception thrown when transacting on closed account", false);
+                                                                                }).catchException({
+                                                                                    "org.mwanzia.test.AccountClosedException": function(exception){
+                                                                                        assertEquals("Exception message", "Account " + account.number + " is already closed", exception.message);
+                                                                                        assertTrue("*** TEST COMPLETED SUCCESSFULLY ***", true);
+                                                                                    }
+                                                                                }).go();
+                                                                            }).go();
+                                                                        }).go();
+                                                                    }).go();
+                                                                }).go();
+                                                            }).go();
+                                                        }).go();
+                                                    }).go();
+                                                }
+                                            }).go();
+                                        }).go();
+                                    }).go();
+                                }).go();
+                            }).go();
+                        }
+                    }).go();
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <p>
+            <a href="/">Demo</a>&nbsp;&nbsp;Core Tests&nbsp;&nbsp;<a href="/perf_tests.html">Performance Tests</a>&nbsp;&nbsp;<a href="/tutorial.html">Tutorial</a>
+        </p>
+        <h1>Mwanzia Core and JPA Tests</h1>
+        <p>
+            This page contains tests for the main compoments of the Mwanzia framework, using the back-end application TestApplication.
+        </p>
+        <p>
+            The tests start running as soon as the page has loaded.
+        </p>
+        <p>
+            If you don't see *** TEST COMPLETED SUCCESSFULLY *** at the end of each test, then the test didn't complete - check your console for error messages.
+        </p>
+    </body>
+</html>

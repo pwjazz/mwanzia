@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Mwanzia Tutorial</title>
+</head>
+<body>
+    <p>
+        <a href="/">Demo</a>&nbsp;&nbsp;<a href="/core_tests.html">Core
+            Tests</a>&nbsp;&nbsp;<a href="/perf_tests.html">Performance Tests</a>&nbsp;&nbsp;Tutorial
+    </p>
+    <h1>Introducing Mwanzia</h1>
+
+    <p>Mwanzia provides a mechanism for remotely binding from JavaScript to
+        remote Java objects via an HTTP transport. Mwanzia keeps the semantics
+        on the client as similar as possible to the server-side, and in general
+        aims to make programming on the client feel like you're programming on
+        the server.</p>
+
+    <p>
+        Unlike <a href="http://code.google.com/webtoolkit/">GWT</a>, Mwanzia is
+        not a UI framework. Consequently, the server-side Java code does not
+        need to contain any UI-related logic or configuration. This makes
+        Mwanzia suitable for binding directly from a JavaScript UI to a domain
+        model without needing to create any server-side UI components.
+    </p>
+
+    <h2>Example</h2>
+
+    In this example, we bind to a single Java object, Account.
+
+    <h3>Java Code</h3>
+
+    <pre>            
+        package org.mwanzia.demo;
+        
+        /**
+         * Part of the domain model in our example system.
+         */
+        public class Account {
+            private Long id;
+            private String name;
+            private Date closedDate;
+            
+            /**
+             * The @Remote annotation indicates that this method is callable
+             * from JavaScript.
+             */
+            @Remote
+            public static List<Account> list() {
+               // query for your accounts as necessary
+            }
+            
+            @Remote
+            public Account close() {
+               this.closedDate = new Date();
+               // persist, audit log, whatever else you need to do
+               return this;
+            }
+            
+            // Market the ID property as @Transferable.  When a call is made
+            // on the client to an instance of Account, that Account will be
+            // passed to the server with all @Transferable properties set to
+            // their values from the client.  In our example, we identify the
+            // Account by id, so we make this transferable. 
+            @Transferable
+            public Long getId() {
+                return id;
+            }
+            
+            public void setId(Long id) {
+                this.id = id;
+            }
+        }             
+    
+    </pre>
+
+    <h3>JavaScript Code</h3>
+
+    <pre>
+        // Import top level package names so that you can use them (e.g. org.mwanzia.demo)
+        mwanziaImport();            
+                    
+        // Import the org.mwanzia.demo package so that we can refernce Account
+        // directly, instead of using org.mwanzia.demo.Account
+        mwanziaImportPackage(org.mwanzia.demo);
+        
+        var theAccount = null;
+        
+        // Call the list() method with a success callback
+        // we have to use callbacks because remote methods are all invoked asynchronously
+        // Note that list() is a static method on the Java class, and the same
+        // semantics apply in the JavaScript version.
+        Account.list().success(function(accountList) {
+            
+            // Get the third account
+            theAccount = accountList[3];
+            
+            // Account.close() is an instance method, so we call it on a
+            // specific instance of an Account.
+            theAccount.close(function(updatedAccount) {
+               
+               // Update the account shown in the UI
+               theAccount = updatedAccount;
+            }).go();
+        }.go(); // don't forget to call go() to execute the method
+        </pre>
+
+    <p>That's it - no messing with XHR objects, URLs, query parameters, ids
+        or any of the usual boilerplate!</p>
+
+    <h3>Wait a minute, where's the plumbing?!</h3>
+
+    <p>Okay, we cheated a little bit, you do have to set up some plumbing to
+        get this all to work, but it's pretty minimal. You'll need to:</p>
+
+    <ol>
+        <li>Create an Application class and register your remote objects</li>
+        <li>Configure the Mwanzia Servlet in your web.xml</li>
+        <li>Import some JavaScript on the client</li>
+    </ol>
+
+    <h4>Application Class</h4>
+
+    In order to use Mwanzia, you create a sub-class of org.mwanzia.Application.
+    Inside the constructor, you register classes for remote access using the
+    method registerRemote().
+
+    <pre>
+        package org.mwanzia.demo;
+        
+        public class DemoApplication extends org.mwanzia.Application {
+            public DemoApplication() {
+                super();
+                // Register Account as a remoteable class in this Application
+                registerRemote(Account.class);
+            }
+        }
+    </pre>
+
+    <h4>web.xml</h4>
+    
+    <pre>
+        &lt;servlet&gt;
+            &lt;servlet-name&gt;Mwanzia&lt;/servlet-name&gt;
+            &lt;servlet-class&gt;org.mwanzia.MwanziaServlet&lt;/servlet-class&gt;
+            &lt;init-param&gt;
+                &lt;!-- TODO - add support for multiple applications --&gt;
+                &lt;param-name&gt;application&lt;/param-name&gt;
+                &lt;param-value&gt;org.mwanzia.demo.DemoApplication&lt;/param-value&gt;
+            &lt;/init-param&gt;
+            &lt;load-on-startup /&gt;
+        &lt;/servlet&gt;
+    
+        &lt;servlet-mapping&gt;
+            &lt;servlet-name&gt;Mwanzia&lt;/servlet-name&gt;
+            &lt;url-pattern&gt;/server.js&lt;/url-pattern&gt;
+        &lt;/servlet-mapping&gt;
+    </pre>
+    
+    <h4>Script Imports</h4>
+    
+    Mwanzia has a number of JavaScript dependencies.
+    
+    <pre>
+        &lt;!-- Required JavaScript Libraries --&gt;
+        &lt;script type="text/javascript" src="/js/console.js"&gt;&lt;/script&gt;
+        &lt;script type="text/javascript" src="/js/jquery-1.4.2.min.js"&gt;&lt;/script&gt;
+        &lt;script type="text/javascript" src="/js/json2.js"&gt;&lt;/script&gt;
+        &lt;script type="text/javascript" src="/js/typesystem.js"&gt;&lt;/script&gt;
+        &lt;script type="text/javascript" src="/js/date.format.js"&gt;&lt;/script&gt;
+        &lt;script type="text/javascript" src="/js/mwanzia.core.js"&gt;&lt;/script&gt;
+        &lt;!-- JPA Plugin (Optional) --&gt;
+        &lt;script type="text/javascript" src="/js/mwanzia.jpa.js"&gt;&lt;/script&gt;
+        &lt;!-- Validation Plugin (Optional) --&gt;
+        &lt;script type="text/javascript" src="/js/mwanzia.validation.js"&gt;&lt;/script&gt;
+        &lt;!-- The dynamically created server.js (generated by Mwanzia servlet) --&gt;
+        &lt;script type="text/javascript" src="/server.js"&gt;&lt;/script&gt;
+    </pre>
+
+</body>
+</html>

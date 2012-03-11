@@ -1,0 +1,52 @@
+label.error {
+  margin-left: 5px;
+  color: #FF0000;
+}
+
+input.error,select.error,textarea.error {
+  background-color: #FFAAAA;
+}
+
+#companiesContainer {
+  float: left;
+  width: 150px;
+}
+
+#companies {
+  width: 100%;
+}
+
+#branchesContainer {
+  float: left;
+  width: 200px;
+  margin-left: 25px;
+}
+
+#branches {
+  width: 100%;
+}
+
+#accountsContainer {
+  float: left;
+  width: 600px;
+  margin-left: 25px;
+}
+
+#newAccountFormContainer {
+  width: 900px;
+}
+
+div.formField {
+  float: left;
+  width: 400px;
+  margin-right: 25px;
+  margin-bottom: 25px;
+}
+
+div.newline {
+  clear: left;
+}
+
+.clear {
+  clear: both;
+}

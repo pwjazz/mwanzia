@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Core and JPA Tests for Mwanzia</title>
+        <!-- Required JavaScript Libraries -->
+        <script type="text/javascript" src="/js/console.js">
+        </script>
+        <script type="text/javascript">
+            console.clear();
+        </script>
+        <script type="text/javascript" src="/js/jquery-1.4.2.min.js">
+        </script>
+        <script type="text/javascript" src="/js/json2.js">
+        </script>
+        <script type="text/javascript" src="/js/typesystem.js">
+        </script>
+        <script type="text/javascript" src="/js/date.format.js">
+        </script>
+        <script type="text/javascript" src="/js/mwanzia.core.js"></script>
+        <!-- JPA Plugin -->
+        <script type="text/javascript" src="/js/mwanzia.jpa.js"></script>
+        <!-- Validation Plugin -->
+        <script type="text/javascript" src="/js/mwanzia.validation.js"></script>
+        <!-- The dynamically created server.js -->
+        <script type="text/javascript" src="/server.js">
+        </script>
+        </script>
+        <script type="text/javascript">
+            mwanziaImport();
+            mwanziaImportPackage(org.mwanzia.test);
+        
+			var invocations = [];
+			var spacing = 150;
+            var invocationString = "if (invocations.length > 0) { invocations.pop().go(); setTimeout(invocationString, " + spacing + "); }";
+            
+            var completionCount = 0;
+            
+            function recordCompletion() {
+            	completionCount += 1;
+            	$("<li>Finished setting up company " + completionCount + " at " + (new Date().getTime() - startTime) + " milliseconds</li>").appendTo(results);
+            } 
+            
+			function runTest() {
+				// Log in
+                TestApplication.login("testuser", "password").success(function() {
+					var iterations = parseInt($("#iterations").val());
+					var results = $("#results");
+					results.children().remove();
+					var startTime = new Date().getTime();
+					var completionCount = 0;
+					var transactionsPerCompany = 9;
+					
+					function recordCompletion() {
+		                completionCount += 1;
+		                var elapsedTime = (new Date().getTime() - startTime);
+		                var tps = transactionsPerCompany * completionCount * 1000 / elapsedTime;
+		                $("<li>Finished setting up company " + completionCount + " at " + elapsedTime + " milliseconds. TPS = " + tps + "</li>").appendTo(results);
+		            }
+					
+					invocations = []; 
+		            for (var i = 0; i<iterations; i++) {
+		                var companyName = "Company " + Math.floor(Math.random() * 10001);
+		                invocations.push(Company.create(companyName).success(function(company){
+		                    // Hire someone
+		                    company.hire("First", "Manager").success(function(manager){
+		                        // Open a branch
+		                        company.newBranch(manager.byReference(), "Austin Branch", {
+		                            line1: "2110 Slaughter Lane",
+		                            city: "Austin",
+		                            state: "TX",
+		                            postalCode: "78748"
+		                        }).success(function(branch){
+		                            // Open another branch of the same company, but using ids instead of the original classes
+		                            new Company({
+		                                id: company.id
+		                            }).newBranch(manager.id, "Austin Branch 2", {
+		                                line1: "2110 Slaughter Lane",
+		                                city: "Austin",
+		                                state: "TX",
+		                                postalCode: "78748"
+		                            }).success(function(secondBranch){
+		                                secondBranch.openAccount({
+		                                    firstName: "Percy",
+		                                    lastName: "Wegmann",
+		                                    ssn: "123-45-6789",
+		                                    age: 27,
+		                                    address: {
+		                                        line1: "2110 Slaughter Lane",
+		                                        city: "Austin",
+		                                        state: "TX",
+		                                        postalCode: "78748"
+		                                    }
+		                                }).success(function(account){
+		                                    var invocation = account.getOwner();
+		                                    invocation.success(function(owner){
+		                                        new Transaction({
+		                                            account: account.byReference(),
+		                                            amount: 5.98,
+		                                            memo: "This is a test transaction"
+		                                        }).submit().success(function(transaction){
+		                                            account.reload().success(function(reloadedAccount){
+		                                                account.close().success(function(closedAccount){
+		                                                    new Transaction({
+		                                                        account: account.byReference(),
+		                                                        amount: -10.00,
+		                                                        memo: "This is a test debit"
+		                                                    }).submit().success(function(transaction){
+		                                                        $("<li>Should have gotten exception on setting up company</li>").appendTo(results);
+		                                                    }).catchException({
+		                                                        "org.mwanzia.test.AccountClosedException": function(exception){
+		                                                            setTimeout(recordCompletion, 0);
+		                                                        }
+		                                                    }).go();
+		                                                }).go();
+		                                            }).go();
+		                                        }).go();
+		                                    }).go();
+		                                }).go();
+		                            }).go();
+		                        }).go();
+		                    }).go();
+	                   }));
+	                }
+				    eval(invocationString);
+				}).go();	
+			}
+        </script>
+    </head>
+    <body>
+        <p>
+            <a href="/">Demo</a>&nbsp;&nbsp;<a href="/core_tests.html">Core Tests</a>&nbsp;&nbsp;Performance Tests&nbsp;&nbsp;<a href="/tutorial.html">Tutorial</a>
+        </p>
+        <h1>Mwanzia Performance Test</h1>
+        <p>Note - setting up 1 company involves 9 server calls</p>
+		<p>
+			<form onsubmit="runTest(); return false;">
+                <label>Iterations</label>&nbsp;<input type="text" id="iterations" maxlength="5" size="7" />&nbsp;<input type="submit" value="run test" />
+		    </form>
+		</p>
+		<ul id="results">
+        	
+        </ul>
+    </body>
+</html>
