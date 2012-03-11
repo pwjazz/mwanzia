@@ -569,7 +569,7 @@ Parameters can also be passed by value, if marked with the @ByValue annotation:
     public Account linkToCustomer(@ByValue Customer customer) {
             this.customers.add(customer);
             return this;
-        }
+    }
 
 On the client, you can then do something like this:
 
