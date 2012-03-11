@@ -192,7 +192,7 @@ Note - JSON is handled on the server using [Jackson](http://jackson.codehaus.org
 Mwanzia exports Java object models to JavaScript and makes certain methods
 available for remote invocation.  In so doing, it attempts to match the client-
 side semantics to the server-side as closely as possible.  The main difference
-is remote invocations are asynchronous, so there's some special syntax for
+is that remote invocations are asynchronous, so there's some special syntax for
 dealing with them.  That's it.
 
 ### Namespaces
@@ -206,8 +206,10 @@ Objects on the client are namespaced just like on the server.
     public class ClassA {}
     
 ##### JavaScript
-
-    // We can reference ClassA fully qualified
+    // We need to import mwanzia first
+    mwanziaImport();
+    
+    // Now we can reference ClassA fully qualified
     var theClass = org.mwanzia.demo.ClassA;
     
     // Or we can import the package and then reference it unqualified
@@ -229,7 +231,7 @@ properties on the client that are not defined on the server.
 
 Methods marked as @Remote are available from the client.  Both static and
 instance methods can be marked as @Remote, and they are accessed from the client
-using the same syntax as in Java.
+using the same conventions as in Java.
 
 ##### Java
 
