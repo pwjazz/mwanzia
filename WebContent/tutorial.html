@@ -1,183 +1,191 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Mwanzia Tutorial</title>
-</head>
-<body>
-    <p>
-        <a href="/">Demo</a>&nbsp;&nbsp;<a href="/core_tests.html">Core
-            Tests</a>&nbsp;&nbsp;<a href="/perf_tests.html">Performance Tests</a>&nbsp;&nbsp;Tutorial
-    </p>
-    <h1>Introducing Mwanzia</h1>
-
-    <p>Mwanzia provides a mechanism for remotely binding from JavaScript to
-        remote Java objects via an HTTP transport. Mwanzia keeps the semantics
-        on the client as similar as possible to the server-side, and in general
-        aims to make programming on the client feel like you're programming on
-        the server.</p>
-
-    <p>
-        Unlike <a href="http://code.google.com/webtoolkit/">GWT</a>, Mwanzia is
-        not a UI framework. Consequently, the server-side Java code does not
-        need to contain any UI-related logic or configuration. This makes
-        Mwanzia suitable for binding directly from a JavaScript UI to a domain
-        model without needing to create any server-side UI components.
-    </p>
-
-    <h2>Example</h2>
-
-    In this example, we bind to a single Java object, Account.
-
-    <h3>Java Code</h3>
-
-    <pre>            
-        package org.mwanzia.demo;
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Mwanzia Tutorial</title>
+    </head>
+    <body>
+        <p>
+            <a href="/">Demo</a>&nbsp;&nbsp;<a href="/core_tests.html">Core Tests</a>&nbsp;&nbsp;<a href="/perf_tests.html">Performance Tests</a>&nbsp;&nbsp;Tutorial
+        </p>
+        <h1>About Mwanzia</h1>
+        <p>Mwanzia gives JavaScript applications a mechanism for binding to a rich domain model implemented in Java.  It is not well-suited to applications that either avoid the use of JavaScript in the UI or that do not have access to the domain model (such as service-oriented architectures).</p>
+        <p>If you are building a rich web-based UI using JavaScript and you have control of your application's domain model, Mwanzi may be a good fit.  To understand how, let's walk through a basic example application and see how this example would be implemented in traditional versus Mwanzia architectures.</p>
         
-        /**
-         * Part of the domain model in our example system.
-         */
-        public class Account {
-            private Long id;
-            private String name;
-            private Date closedDate;
-            
-            /**
-             * The @Remote annotation indicates that this method is callable
-             * from JavaScript.
-             */
-            @Remote
-            public static List<Account> list() {
-               // query for your accounts as necessary
-            }
-            
-            @Remote
-            public Account close() {
-               this.closedDate = new Date();
-               // persist, audit log, whatever else you need to do
-               return this;
-            }
-            
-            // Market the ID property as @Transferable.  When a call is made
-            // on the client to an instance of Account, that Account will be
-            // passed to the server with all @Transferable properties set to
-            // their values from the client.  In our example, we identify the
-            // Account by id, so we make this transferable. 
-            @Transferable
-            public Long getId() {
-                return id;
-            }
-            
-            public void setId(Long id) {
-                this.id = id;
-            }
-        }             
-    
-    </pre>
-
-    <h3>JavaScript Code</h3>
-
-    <pre>
-        // Import top level package names so that you can use them (e.g. org.mwanzia.demo)
-        mwanziaImport();            
-                    
-        // Import the org.mwanzia.demo package so that we can refernce Account
-        // directly, instead of using org.mwanzia.demo.Account
-        mwanziaImportPackage(org.mwanzia.demo);
+        <h2>Example Application</h2>
+        <p>Our example application has a very simple domain model, consisting of a single class - Account:</p>
+        <p><img src="http://yuml.me/4f34a4ad" /></p>
+        <p>Our UI is similarly simple.  It consists of a page that shows a list of accounts, each of which has a close button that closes that account:</p>
+        <table>
+            <tr><td>Account Name 1</td><td><a href="javascript:void(0)">close</a></td></tr>
+            <tr><td>Account Name 2</td><td><a href="javascript:void(0)">close</a></td></tr>
+            <tr><td>Account Name 3</td><td><a href="javascript:void(0)">close</a></td></tr>
+        </table>
+		
+		<h3>Solution 1 - Full-page MVC (a la Struts)</h3>
+        <p>This is the most basic solution, and its design is characterized by:</p>
+        <ul>
+            <li><b>Full Page Rendering</b> - The full page is rendered after each browser request, which allows for all rendering logic to live on the server so that using JavaScript is not necessary on the UI.</li>
+            <li><b>Controller Servlet</b> - The controller servlet handles requests from the browser and maps them to a controller class either based on convention or explicit configuration.</li> 
+            <li><b>Controller Classes</b> - Controller classes validate inbound data, bind it to the domain model, and delegate rendering to the appropriate view (e.g. JSP page).</li>
+            <li><b>JSP-based View</b> - JSP (or a similar server-side templating technology) binds data from the domain model into markup.</li>
+        </ul>
         
-        var theAccount = null;
+<!--
+User->Browser: open page
+Browser->ControllerServlet: /listAccounts
+ControllerServlet->ListAccountsController: execute()
+ListAccountsController->Account: list()
+Account->ListAccountsController: list of accounts
+ListAccountsController->ControllerServlet: SUCCESS
+ControllerServlet->accountList.jsp: render()
+accountList.jsp->accountList.jsp: bind accounts into list
+ControllerServlet->Browser: rendered HTML
+Browser->Browser: display HTML
+User->Browser: click close
+Browser->ControllerServlet: /closeAccount?accountId=5
+ControllerServlet->CloseAccountController: execute()
+CloseAccountController->CloseAccountController: find account by ID
+CloseAccountController->Account 5: close()
+CloseAccountController->ControllerServlet: SUCCESS
+ControllerServlet->Browser: redirect to /listAccounts
+Browser->ControllerServlet: /listAccounts
+ControllerServlet->ListAccountsController: execute()
+ListAccountsController->Account: list()
+Account->ListAccountsController: list of accounts
+ListAccountsController->ControllerServlet: SUCCESS
+ControllerServlet->accountList.jsp: render()
+accountList.jsp->accountList.jsp: bind accounts into list
+ControllerServlet->Browser: rendered HTML
+Browser->Browser: display HTML
+-->        
+        <p><img alt="Full-page MVC" src="http://www.websequencediagrams.com/cgi-bin/cdraw?lz=VXNlci0-QnJvd3Nlcjogb3BlbiBwYWdlCgAMBy0-Q29udHJvbGxlclNlcnZsZXQ6IC9saXN0QWNjb3VudHMKABARLT5MABULADYKOiBleGVjdXRlKCkKAAwWLT4ATwc6IGxpc3QoKQoAXwcAORpsaXN0IG9mIGEAgQcIAEIYAIE1E1NVQ0NFU1MAgS4UAEgHTGlzdC5qc3A6IHJlbmRlcigpCgALDwAYE2JpbmQAgQcJIGludG8AgUkFAIIVFACCcAkAWQZlZCBIVE1MAIJzCgCDEAlkaXNwbGF5ABkGAIMmD2NsaWNrIGNsb3MAgxgfAB4FAIMxBz8AgioHSWQ9NQCDLxRDACELAIMtFgAMFgAgGmYAggwLIGJ5IElEACoZAIRVByA1OgCBUQYAUhwAgyotAIJlC2RpcmVjdCB0bwCFQA8Agl2DHA&s=default" /></p>
         
-        // Call the list() method with a success callback
-        // we have to use callbacks because remote methods are all invoked asynchronously
-        // Note that list() is a static method on the Java class, and the same
-        // semantics apply in the JavaScript version.
-        Account.list().success(function(accountList) {
-            
-            // Get the third account
-            theAccount = accountList[3];
-            
-            // Account.close() is an instance method, so we call it on a
-            // specific instance of an Account.
-            theAccount.close(function(updatedAccount) {
-               
-               // Update the account shown in the UI
-               theAccount = updatedAccount;
-            }).go();
-        }.go(); // don't forget to call go() to execute the method
-        </pre>
-
-    <p>That's it - no messing with XHR objects, URLs, query parameters, ids
-        or any of the usual boilerplate!</p>
-
-    <h3>Wait a minute, where's the plumbing?!</h3>
-
-    <p>Okay, we cheated a little bit, you do have to set up some plumbing to
-        get this all to work, but it's pretty minimal. You'll need to:</p>
-
-    <ol>
-        <li>Create an Application class and register your remote objects</li>
-        <li>Configure the Mwanzia Servlet in your web.xml</li>
-        <li>Import some JavaScript on the client</li>
-    </ol>
-
-    <h4>Application Class</h4>
-
-    In order to use Mwanzia, you create a sub-class of org.mwanzia.Application.
-    Inside the constructor, you register classes for remote access using the
-    method registerRemote().
-
-    <pre>
-        package org.mwanzia.demo;
+        <h4>What's less than optimal about this?</h4>
+        <ol>
+            <li>Rendering JSPs is computationally expensive compared with manipulating the domain model.  This means that more server capacity is needed to meet increased load.  It also will often drive people to deploy the UI layer and the business logic layer onto physically separate processes (e.g. Tomcat + JBoss EJB/Web Services).  This increases the complexity of the deployment architecture and also requires the creation of a new and unnecessary layer of services.</li>
+            <li>We have to re-list all of the accounts after closing one, which causes an extra round-trip to the database.</li>
+            <li>We have to create controller classes for every little thing, even a simple operation like Account.close().</li>
+        </ol>
         
-        public class DemoApplication extends org.mwanzia.Application {
-            public DemoApplication() {
-                super();
-                // Register Account as a remoteable class in this Application
-                registerRemote(Account.class);
-            }
-        }
-    </pre>
+        <h3>Solution 2 - Full-page MVC with AJAX Updates</h3>
+        <p>This is similar to solution 1, except instead of doing a full-page repaint for the delete operation, we just submit it via AJAX. This has the advantage of avoiding the extra round-trip to the database.</p>
+        
+<!--
+User->Browser: open page
+Browser->ControllerServlet: /listAccounts
+ControllerServlet->ListAccountsController: execute()
+ListAccountsController->Account: list()
+Account->ListAccountsController: list of accounts
+ListAccountsController->ControllerServlet: SUCCESS
+ControllerServlet->accountList.jsp: render()
+accountList.jsp->accountList.jsp: bind accounts into list
+ControllerServlet->Browser: rendered HTML
+Browser->Browser: display HTML
+User->Browser: click close
+Browser->Browser: create XHR
+Browser->Browser: submit XHR
+Browser->ControllerServlet: /closeAccount?accountId=5
+ControllerServlet->CloseAccountController: execute()
+CloseAccountController->CloseAccountController: find account by ID
+CloseAccountController->Account 5: close()
+CloseAccountController->ControllerServlet: SUCCESS
+ControllerServlet->ControllerServlet: convert account as JSON
+ControllerServlet->Browser: account as JSON
+Browser->Browser: bind updated account into DOM
+-->        
+        <p><img alt="Full-page MVC with AJAX Updates" src="http://www.websequencediagrams.com/cgi-bin/cdraw?lz=VXNlci0-QnJvd3Nlcjogb3BlbiBwYWdlCgAMBy0-Q29udHJvbGxlclNlcnZsZXQ6IC9saXN0QWNjb3VudHMKABARLT5MABULADYKOiBleGVjdXRlKCkKAAwWLT4ATwc6IGxpc3QoKQoAXwcAORpsaXN0IG9mIGEAgQcIAEIYAIE1E1NVQ0NFU1MAgS4UAEgHTGlzdC5qc3A6IHJlbmRlcigpCgALDwAYE2JpbmQAgQcJIGludG8AgUkFAIIVFACCcAkAWQZlZCBIVE1MAIJzCgCDEAlkaXNwbGF5ABkGAIMmD2NsaWNrIGRlbGV0AIMZH2Nsb3NlAIMyBz8AgisHSWQ9NQCDMBRDACELAIMuFgAMFgAgGmYAgg0LIGJ5IElEACoZAIRWByA1OiAAgS8FAFIcAIMrLQCFOxNjb252ZXJ0AIERCWFzIEpTT04AgxIdABwQAIMfEgCEAAV1cGRhdGUAgWsKAIQHBURPTQ&s=default" /></p>
+        
+        <p>This is an improvement, but databinding into the UI is now handled in two places - some on a JSP, some in JavaScript.  This gets to be a hassle to maintain.</p>
+        
+        <h3>Solution 3 - Full AJAX</h3>
+        <p>In order to avoid bifurcating our rendering and databinding logic between browser and server, we now use AJAX for everything.  The starting point for the flow is to load a static HTML page that bootstraps the necessary JavaScript.</p>
+        
+        <p><img alt="Full AJAX" src="http://www.websequencediagrams.com/cgi-bin/cdraw?lz=VXNlci0-QnJvd3Nlcjogb3BlbiBwYWdlCgAMBy0-V2ViIFNlcnZlcjogL2xpc3RfYWNjb3VudHMuaHRtbAoAFgoAPQtzdGF0aWMgSFRNTABACgBdCWNyZWF0ZSBYSFIAChNzdWJtaXQADw5Db250cm9sbGVyU2VydmxldACBBAdBAIEDBwoAEBEtPkwAFQsANgo6IGV4ZWN1dGUoKQoADBYtPgBPBzogbGlzdCgpCgBfBwA5Gmxpc3Qgb2YgAIIRCABBGQCBNRNTVUNDRVNTAIEuFACBYxNjb252ZXJ0AGEJIHRvIEpTT04AgW0UAINMCQAkCWFzACcGAIMAEmJpbmQASwppbnRvIERPTQoAhA8PY2xpY2sgY2xvcwCEFQsAgwhOAFgFAINQBz8AhGIHSWQ9NQCCCxUAIQsAg0wWAAwWACAaZgCBfAsgYnkgSUQAKhkAhHQHIDU6AIILBgBSHACDJ08Agz8JAINSIwCDVCB1cGRhdGUAgWsKAINzCA&s=default" /></p>
+        
+        <h4>What's less than optimal about this?</h4>
+        <p>Okay, now we've essentially moved all UI logic onto the client, so we've saved the server from having to render HTML and we're maintaining our UI logic in one place (JavaScript).  Unfortunately, calling simple operations like Account.list() and Account.delete() still requires the client to manually construct an XHR and construct the appropriate url and query parameters, and we still need to create controller classes to allowing invoking our domain model methods, even though there is now no UI work being done on the server.</p>
+        
+        <h3>Solution 4 - Full AJAX with Mwanzia</h3>
+        <p>Plugging in Mwanzia allows us to implement solution 3 without all of the boilerplate code on the server and in the client. It accomplishes this by exporting the domain model to JavaScript in a way that allows it to be used from the browser in more or less the same way that it would be from a server-side controller class.</p>
+        
+<!--
+User->Browser: open page
+Browser->Web Server: /list_accounts.html
+Web Server->Browser: static HTML
+Browser->MwanziaServlet: /js/server.js
+MwanziaServlet->Browser: JavaScript domain model
+Browser->Account (JS): list()
+Account (JS)->Account (Server): list()
+Account (Server)->Account (JS): accounts as JSON
+Account (JS)->Browser: accounts as JSON
+Browser->Browser: bind accounts into DOM
+User->Browser: click close
+Browser->Account 5 (JS): close()
+Account 5 (JS)->Account 5 (Server): close()
+Account 5 (Server)->Account 5 (JS): updated account
+Account 5 (JS)->Browser: updated account
+Browser->Browser: bind updated account into DOM
+-->        
+        <p><img alt="Full AJAX with Mwanzia" src="http://www.websequencediagrams.com/cgi-bin/cdraw?lz=VXNlci0-QnJvd3Nlcjogb3BlbiBwYWdlCgAMBy0-V2ViIFNlcnZlcjogL2xpc3RfYWNjb3VudHMuaHRtbAoAFgoAPQtzdGF0aWMgSFRNTABACkpKUk9TZXJ2bGV0OiAvanMvcwBSBS5qcwoAEAsAgQMLSmF2YVNjcmlwdCBkb21haW4gbW9kZWwAgRIKQQCBBAYgKEpTKTogbGlzdCgpCgAJDAAYCwCBPgYAFBMAEgcAPhAAgV4IIGFzIEpTT04ASQ8AgioJABcRAIIxCQCCTQliaW5kAEYKaW50byBET00KAIJtD2NsaWNrIGNsb3MAgnMLAIFaCDUAgV0HABoFAIFaCwASBgAbDQCBYAkAGRMAgVsRAFAIdXBkYXRlAIEdCQBPEQCEGQkAGRAAgVcXAEEPAIFsCQ&s=default" /></p>
+        
+        <h4>What's great about this?</h4>
+        <ol>
+            <li>We still have all of the performance benefits of the full AJAX approach.</li>
+            <li>We no longer need to create and maintain controller classes.</li>
+            <li>Our JavaScript doesn't need to manually construct XHRs nor do any work to construct URLs - data is transparently bound into server-side methods based on the method call itself.</li>
+        </ol>
+        
+        <h4>Is anything special required in the domain model to support this?</h4>
+        <p>Not much - you just need to put a @Remote annotation on any method that needs to be remotely accessible from the UI.</p>
+<pre>            
+package org.mwanzia.demo;
 
-    <h4>web.xml</h4>
+public class Account {
+    private Long id;
+    private String name;
+    private Date closedDate;
     
-    <pre>
-        &lt;servlet&gt;
-            &lt;servlet-name&gt;Mwanzia&lt;/servlet-name&gt;
-            &lt;servlet-class&gt;org.mwanzia.MwanziaServlet&lt;/servlet-class&gt;
-            &lt;init-param&gt;
-                &lt;!-- TODO - add support for multiple applications --&gt;
-                &lt;param-name&gt;application&lt;/param-name&gt;
-                &lt;param-value&gt;org.mwanzia.demo.DemoApplication&lt;/param-value&gt;
-            &lt;/init-param&gt;
-            &lt;load-on-startup /&gt;
-        &lt;/servlet&gt;
+    @Remote
+    public static List<Account> list() {
+       // query for your accounts as necessary
+    }
     
-        &lt;servlet-mapping&gt;
-            &lt;servlet-name&gt;Mwanzia&lt;/servlet-name&gt;
-            &lt;url-pattern&gt;/server.js&lt;/url-pattern&gt;
-        &lt;/servlet-mapping&gt;
-    </pre>
-    
-    <h4>Script Imports</h4>
-    
-    Mwanzia has a number of JavaScript dependencies.
-    
-    <pre>
-        &lt;!-- Required JavaScript Libraries --&gt;
-        &lt;script type="text/javascript" src="/js/console.js"&gt;&lt;/script&gt;
-        &lt;script type="text/javascript" src="/js/jquery-1.4.2.min.js"&gt;&lt;/script&gt;
-        &lt;script type="text/javascript" src="/js/json2.js"&gt;&lt;/script&gt;
-        &lt;script type="text/javascript" src="/js/typesystem.js"&gt;&lt;/script&gt;
-        &lt;script type="text/javascript" src="/js/date.format.js"&gt;&lt;/script&gt;
-        &lt;script type="text/javascript" src="/js/mwanzia.core.js"&gt;&lt;/script&gt;
-        &lt;!-- JPA Plugin (Optional) --&gt;
-        &lt;script type="text/javascript" src="/js/mwanzia.jpa.js"&gt;&lt;/script&gt;
-        &lt;!-- Validation Plugin (Optional) --&gt;
-        &lt;script type="text/javascript" src="/js/mwanzia.validation.js"&gt;&lt;/script&gt;
-        &lt;!-- The dynamically created server.js (generated by Mwanzia servlet) --&gt;
-        &lt;script type="text/javascript" src="/server.js"&gt;&lt;/script&gt;
-    </pre>
+    @Remote
+    public Account close() {
+       this.closedDate = new Date();
+       // persist, audit log, whatever else you do
+       return this;
+    }
+}             
+</pre>
+        
+        <p>That's it!</p>
+        
+        <h4>What does the JavaScript code look like?</h4>
+        <p>Leaving aside the logic for binding to the DOM and client-side event handling, the client-side code to list accounts and then close one of them looks as follows:</p>
+        
+<pre>
+// Import top level package names so that you can use them (e.g. org.mwanzia.demo)
+mwanziaImport();            
+            
+// Import the org.mwanzia.demo package
+mwanziaImportPackage(org.mwanzia.demo);
 
-</body>
+var theAccount = null;
+
+// Call the list() method with a success callback - we have to use callbacks because remote methods are all invoked asynchronously
+Account.list().success(function(accountList) {
+    // Get the third account
+    theAccount = accountList[3];
+    theAccount.close(function(updatedAccount) {
+       // Update the account stored in the UI
+       theAccount = updatedAccount;
+    }).go();
+}.go(); // don't forget to call go() to execute the method
+</pre>
+                
+        <p>That's it - no messing with XHR objects, URLs, query parameters, ids or any of the usual boilerplate!</p>
+        
+    </body>
 </html>
