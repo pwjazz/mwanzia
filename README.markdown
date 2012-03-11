@@ -185,7 +185,9 @@ Mwanzia has a number of JavaScript dependencies.
    instance of the appropriate type, and then set all properties marked as
    @Transferable (in this case, the property "id").  Then it calls the method.
    
-### Core Features
+Note - JSON is handled on the server using [Jackson](http://jackson.codehaus.org/).
+
+### Core Functionality
 
 Mwanzia exports Java object models to JavaScript and makes certain methods
 available for remote invocation.  In so doing, it attempts to match the client-
@@ -214,8 +216,246 @@ Objects on the client are namespaced just like on the server.
     
 #### Constructors
 
+Objects on the client are constructed as one would expect, using the new
+operator.  Upon construction, one can pass any number of properties to the
+constructor in an associative array.
+
+    var myObject = new ClassA({property1: "val", property2: 5});
+    
+#### Remote Methods
+
+Methods marked as @Remote are available from the client.  Both static and
+instance methods can be marked as @Remote, and they are accessed from the client
+using the same syntax as in Java.
+
+##### Java
+
+    public class ClassA {
+        @Remote
+        public static void remoteStaticMethod() {}
+        
+        @Remote
+        public void remoteInstanceMethod() {}
+        
+        public static void nonRemoteStaticMethod() {}
+        
+        public static void nonRemoteInstanceMethod() {}
+    }
+    
+##### JavaScript    
+
+    // All these are true
+    typeof(Account.remoteStaticMethod) == "function";
+    
+    typeof(new Account().remoteInstanceMethod) == "function";
+    
+    typeof(Account.nonRemoteStaticMethod) == "undefined";
+    
+    typeof(new Account().nonRemoteStaticMethod) == "undefined";
+
+#### Inheritance
+
+Objects on the client follow the same inheritance hierarchy as objects on the
+server.
+
+##### Java
+
+    public class Parent {
+        @Remote
+        public void parentMethod() {}
+    }
+    
+    public class Child extends Parent {
+        @Remote
+        public void childMethod() {}
+    }
+    
+##### JavaScript
+
+    var aChild = new Child();
+    
+    // All of these are true
+    
+    aChild instanceof Child;
+    
+    aChild instanceof Parent;
+    
+    typeof(aChild.childMethod) == "function";
+    
+    typeof(aChild.parentMethod) == "function";
+    
+#### Remote Method Invocation
+
+On the client-side, remote methods are actually factories for remote invocations.
+They accept all of the same parameters as the server-sider method., plus a final
+parameter for a callback function that handles the return value from the remote
+function.
+
+##### Java
+
+    public class SampleClass {
+    
+        @Remote
+        public static String speak(String text, boolean loud) {
+            if (loud) text = text.toUpperCase();
+            System.out.println(text);
+            return loud ? "I spoke loudly" : "I spoke";
+        }
+    
+    }
+    
+##### JavaScript
+
+    var remoteInvocation = SampleClass.speak("Hello", true);
+    
+Since the call will be asynchronous, you'll typically want to register a
+callback for receiving the return value.  This is done using the success()
+method on the remote invocation.
+    
+Note - success(), like all methods on remote invocations, is chainable, meaning
+that they all return a remoteInvocation, which you can then use immediately.
+
+##### JavaScript
+
+    var remoteInvocation = SampleClass.speak("Hello", true).success(function(returnValue) {
+        // This is true
+        returnValue == "I spoke loudly";
+    });
+    
+When you're ready to make the call, use the method go() on the remote invocation.
+Remote invocations are reusable, so you can call go() as many times as you like.
+
+##### JavaScript
+    
+    var remoteInvocation = SampleClass.speak("Hello", true).success(function(returnValue) {
+        // This is true
+        returnValue == "I spoke loudly";
+    }).go();
+    
+    // Do it again if you want
+    remoteInvocation.go();
+    
 #### Exception Handling
 
+Mwanzia allows clients to handle exceptions from remote methods using a similar
+syntax as Java.  Exceptions are typed and polymorphic, for maximum compatibility
+with the patterns you're accustomed to in Java.
+
+To handle an exception, use the catchException() method on a remote invocation
+and pass in an associative array of exception types and handler functions.
+
+##### Java
+
+    package org.mwanzia.demo;
+    
+    public class MyException extends Exception { 
+        private long errorCode;
+        
+        public long getErrorCode() {
+            return errorCode;
+        }
+        
+        // Add constructors
+    }
+
+    public class SampleClass {
+    
+        @Remote
+        public static void doStuff() throws MyException { ... }
+    
+    }
+    
+##### JavaScript
+
+    var remoteInvocation = SampleClass.doStuff().success(function() {
+        alert("All good");
+    }).catchException({
+        "org.mwanzia.demo.MyException": function(exception) {
+            alert("Caught MyException with error code: " + exception.errorCode);
+        },
+        "java.lang.Exception": function(exception) {
+            alert("Caught unexpected exception with message: " + exception.message);
+        }
+    });
+
+#### Passing Parameters
+
+Remote methods can include parameters, including both primitive as well as
+reference types.
+
++ Primitive types are handled as you would expect.
++ BigDecimals are treated as floating point numbers on the client
++ Dates receive special handling.  They are serialized using an ISO8601 format
+  and automatically converted into timezone-adjusted dates on the client.
++ Reference types are passed by value, which is to say that on the server, they
+  reflect whatever data was passed in by the client.  Data can be nested to
+  any depth, however if your input data contains cyclic graphs, you'll need to
+  use the @JsonBackReference annotation to deal with this.
+  
+##### Java
+
+    public class TextContainer {
+        private String text;
+        
+        // Add getters and setters
+    }
+    
+    public class Message {
+        private TextContainer textContainer;
+        private Date date;
+        
+        // Add getters and setters
+    }
+    
+    public class Service {
+        public void printMessage(Message message, int repetitions) {
+            for (int i=0; i<repetitions; i++) {
+                System.out.println(message.textContainer.text + " at " + date);
+            }
+        }
+    }
+    
+##### JavaScript
+
+    var message = new Message({ text: new TextContainer({text: "Hello world"}),
+                                date: new Date()});
+    var service = new Service();
+    
+    // This will print the message 5 times on the server
+    service.printMessage(message, 5).go();
+    
+#### Passing Instance Data
+
+When calling an instance of an object, you may want to set some or all of its
+properties from the client and make these available on the server.  You do this
+by applying the @Transferable annotation either to the individual properties or
+to the whole class.
+
+##### Java
+
+    @Transferable
+    public class Transaction {
+        private BigDecimal amount;
+        private String memo;
+        
+        // add getters and setters
+        
+        public String submit() {
+            // Submit our transaction to the database
+            // Using the amount and memo fields
+            return referenceNumber;
+        }
+    }
+    
+##### JavaScript
+
+    var transaction = new Transaction({ amount: 5.67,
+                                        memo: "A small test transaction"});
+                                        
+    transaction.submit().success(function(referenceNumber) {
+        alert(referenceNumber);
+    }).go();                                    
+    
 ### Security
 
 Mwanzia takes various steps to prevent JavaScript clients from gaining access
