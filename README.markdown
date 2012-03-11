@@ -190,11 +190,6 @@ Mwanzia has a number of JavaScript dependencies.
 Mwanzia takes various steps to prevent JavaScript clients from gaining access
 to functionality and data that they ought not to.
 
-#### Class Whitelisting
-
-Only classes registered as remote within your Application are accessible from
-the client.
-
 #### Method Whitelisting
 
 Only methods marked as @Remote are accessible from the client.
@@ -203,7 +198,7 @@ Only methods marked as @Remote are accessible from the client.
 
 Your Mwanzia Application can use either whitelisting or blacklisting to
 restrict client-side access to properties on your Java beans.  The default mode
-is white-listing.
+is whitelisting.
 
 + *@JsonProperty* - add this to the getter method to whitelist the property
 
@@ -221,8 +216,81 @@ persistent entity.
 Mwanzia includes a plugin that supports authentication and method-level
 authorization using [Apache Shiro](http://shiro.apache.org/).
 
+### Core Features
+
+#### Exception Handling
+
 ### Plugins
 
+In order to support the use of Mwanzia in a variety of contexts, the core of
+Mwanzia is extremely slim on features and focuses purely on remoting from
+JavaScript to Java.  Mwanzia can be extended through the use of plugins, and
+it includes a few plugins to support common usage patterns.
 
 ### JPA Support
 
+Mwanzia is particularly well suited to binding from JavaScript to a persistent
+server-side domain model.  In fact, this is the scenario for which Mwanzia
+was originally authored.  The JPA plugin (currently implemented for Hibernate)
+supports this pattern.
+
+The JPA plugin provides several key features:
+
+#### Managing Object Identity
+
+Persistent entities are treated as references that are identified by a single
+property named "id".  When a remote method is called on a persistent entity,
+Mwanzia first loads that entity from the database and then invokes the method
+on that peristent entity.
+
+#### Pass by Reference
+
+When calling a remote method that accepts a persistent entity as a parameter,
+Mwanzia will by default pass that entity from the client by reference.  This
+means that the entity is identified by its "id" property and the parameter
+is loaded from the database before being passed to the method.
+
+For example:
+
+    public class Customer {
+        @Id
+        private Long id;
+    }
+
+    public class Account {
+        @Id
+        private Long id;
+        
+        private Set<Customer> customers = new HashSet<Customer>();
+        
+        public Account linkToCustomer(Customer customer) {
+            this.customers.add(customer);
+            return this;
+        }
+    }
+    
+On client:
+
+    var customer = // get the customer from somewhere;
+    var account = // get the account from somewhere
+    
+    account.linkToCustomer(customer, function(updatedAccount) {
+        // handle the updatedAccount
+    }).go();
+    
+In this example, when linkToCustomer is called, Mwanzia will look up the
+Account by its id, look up the Customer by its id, and then pass that Customer
+to that Account's linkToCustomer() method.
+
+Since we're just passing the Customer by id, it's perfectly ok to just pass an
+id on the client-side, like so:
+
+    account.linkToCustomer(5, function(updatedAccount) {
+        // handle the updatedAccount
+    }).go();
+
+#### Automatic Remote Registration
+
+All persistent types are automatically exported to the client and eligible for
+remote access.  Individual methods still need to be marked as @Remote to allow
+remote invocation.
