@@ -40,7 +40,10 @@ UI components.
            // persist, audit log, whatever else you need to do
            return this;
         }
-        
+
+        // this annotation means that the ID will be transferred from client
+        // to server when making calls to a specific instance of the Account        
+        @Transferable 
         public Long getId() {
             return id;
         }
@@ -169,10 +172,16 @@ Mwanzia has a number of JavaScript dependencies.
 ![Example Sequence Diagram](https://github.com/pwjazz/mwanzia/raw/master/docs/img/example_sequence_diagram.png)
 
 1. When you include server.js on your page, it imports dynamically created
-JavaScript that defines the client-side version of your object model.
+   JavaScript that defines the client-side version of your object model.  A look
+   at this file will explain much about the magic that happens on the client-side.
 
-2. When you call a remote method on your JavaScript object, the Mwanzia AJAX
-transport issues a POST request to server.js.  On the server-side, the
-MwanziaServlet dispatches this call to the appropriate 
-requests to server.js in order to perform remote invocations.
-
+2. When you call a remote method like list() in the browser, the JavaScript
+   object dispatches this to the server via the MwanziaServlet.  In the case of
+   a static method like this, MwanziaServlet simply invokes the static method
+   on the server and then returns the result to the client.
+   
+3. In addition to calling static methods, you may also call instance methods
+   like close(). When you do this, MwanziaServlet will first instantiate an
+   instance of the appropriate type, and then set all properties marked as
+   @Transferable.  Then it calls the method.
+   

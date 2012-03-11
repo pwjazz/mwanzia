@@ -1,0 +1,22 @@
+---- Example Sequence Diagram ----
+
+User->Browser: open page
+Browser->Web Server: /list_accounts.html
+Web Server->Browser: static HTML
+Browser->MwanziaServlet: 1: /server.js
+MwanziaServlet->Browser: JavaScript domain model
+Browser->Account (JS): 2: list()
+Account (JS)->MwanziaServlet: dispatch()
+MwanziaServlet->Account (Server): list()
+Account (Server)->Account (JS): accounts as JSON
+Account (JS)->Browser: accounts as JSON
+Browser->Browser: bind accounts into DOM
+User->Browser: click close
+Browser->Account 5 (JS): 3: close()
+Account 5 (JS)->MwanziaServlet: dispatch()
+MwanziaServlet->Account 5 (Server): new
+MwanziaServlet->Account 5 (Server): setId(5)
+MwanziaServlet->Account 5 (Server): close()
+Account 5 (Server)->Account 5 (JS): updated account
+Account 5 (JS)->Browser: updated account
+Browser->Browser: bind updated account into DOM
