@@ -292,7 +292,7 @@ server.
 ### Remote Method Invocation
 
 On the client-side, remote methods are actually factories for remote invocations.
-They accept all of the same parameters as the server-sider method., plus a final
+They accept all of the same parameters as the server-sider method, plus a final
 parameter for a callback function that handles the return value from the remote
 function.
 
@@ -389,9 +389,9 @@ Remote methods can include parameters, including both primitive as well as
 reference types.
 
 + Primitive types are handled as you would expect.
-+ BigDecimals are treated as floating point numbers on the client
++ BigDecimals are treated as floating point numbers on the client.
 + Dates receive special handling.  They are serialized using an ISO8601 format
-  and automatically converted into timezone-adjusted dates on the client.
+  and automatically converted to/from timezone-adjusted dates on the client.
 + Reference types are passed by value, which is to say that on the server, they
   reflect whatever data was passed in by the client.  Data can be nested to
   any depth, however if your input data contains cyclic graphs, you'll need to
@@ -588,9 +588,14 @@ All persistent types are automatically exported to the client and eligible for
 remote access.  Individual methods still need to be marked as @Remote to allow
 remote invocation.
 
+#### Optimistic Locking
+
+The JPA plugin supports your application's use of optimistic locking as long
+as the version field is called "version".
+
 #### Configuration
 
-// TODO:
+TODO:
 
 ### Transaction Plugin
 
