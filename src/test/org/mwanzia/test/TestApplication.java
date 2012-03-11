@@ -28,11 +28,13 @@ import org.mwanzia.extras.validation.validators.Required;
 @Guarded
 public class TestApplication extends Application implements ShiroSecuredApplication {
     static {
+        // Initialize the JPA persistence context
         JPA.initialize("demo");
     }
 
     public TestApplication() {
         super();
+        // Register a plugin for doing transaction management
         registerPlugin(new TransactionPlugin<EntityTransaction>() {
             @Override
             protected EntityTransaction beginTransaction() {
