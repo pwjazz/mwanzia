@@ -1,0 +1,92 @@
+--------------------------------- OVERVIEW ---------------------------------
+
+   Mwanzia provides a mechanism for seamless remote binding from JavaScript to
+   server-side Java objects via an HTTP transport. Mwanzia keeps the semantics
+   on the client as similar as possible to the server-side, and in general aims
+   to make programming on the client feel like you're programming on the server.
+
+   Unlike <a href="http://code.google.com/webtoolkit/">GWT</a>, Mwanzia is not a
+   UI framework. Consequently, the server-side Java code does not need to
+   contain any UI-related logic or configuration. This makes Mwanzia suitable
+   for binding directly from a JavaScript UI to a domain model without needing
+   to create any server-side UI components.
+   
+   --------------------------------- EXAMPLE -----------------------------------
+
+   Java Code:
+   
+    package org.mwanzia.demo;
+        
+    /**
+     * Part of the domain model in our example system.
+     */
+    public class Account {
+        private Long id;
+        private String name;
+        private Date closedDate;
+        
+        /**
+         * The @Remote annotation indicates that this method is callable
+         * from JavaScript.
+         */
+        @Remote
+        public static List<Account> list() {
+           // query for your accounts as necessary
+        }
+        
+        @Remote
+        public Account close() {
+           this.closedDate = new Date();
+           // persist, audit log, whatever else you need to do
+           return this;
+        }
+        
+        // Market the ID property as @Transferable.  When a call is made
+        // on the client to an instance of Account, that Account will be
+        // passed to the server with all @Transferable properties set to
+        // their values from the client.  In our example, we identify the
+        // Account by id, so we make this transferable. 
+        @Transferable
+        public Long getId() {
+            return id;
+        }
+        
+        public void setId(Long id) {
+            this.id = id;
+        }
+    } 
+    
+   JavaScript Code:
+   
+    // Import top level package names so that you can use them
+    // (e.g. org.mwanzia.demo)
+    
+    mwanziaImport();            
+                
+    // Import the org.mwanzia.demo package so that we can reference Account
+    // directly, instead of using org.mwanzia.demo.Account
+    
+    mwanziaImportPackage(org.mwanzia.demo);
+    
+    var theAccount = null;
+    
+    // Call the list() method with a success callback
+    // we have to use callbacks because remote methods are all invoked
+    // asynchronously
+    
+    // Note that list() is a static method on the Java class, and the same
+    // semantics apply in the JavaScript version.
+    
+    Account.list().success(function(accountList) {
+        
+        // Get the third account
+        theAccount = accountList[3];
+        
+        // Account.close() is an instance method, so we call it on a
+        // specific instance of an Account.
+        theAccount.close(function(updatedAccount) {
+           
+           // Update the account shown in the UI
+           theAccount = updatedAccount;
+        }).go();
+    }.go(); // don't forget to call go() to execute the method
