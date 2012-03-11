@@ -187,7 +187,7 @@ Mwanzia has a number of JavaScript dependencies.
    
 Note - JSON is handled on the server using [Jackson](http://jackson.codehaus.org/).
 
-### Core Functionality
+## Core Functionality
 
 Mwanzia exports Java object models to JavaScript and makes certain methods
 available for remote invocation.  In so doing, it attempts to match the client-
@@ -195,7 +195,7 @@ side semantics to the server-side as closely as possible.  The main difference
 is remote invocations are asynchronous, so there's some special syntax for
 dealing with them.  That's it.
 
-#### Namespaces
+### Namespaces
 
 Objects on the client are namespaced just like on the server.
 
@@ -214,15 +214,18 @@ Objects on the client are namespaced just like on the server.
     mwanziaImportPackage(org.mwanzia.demo);
     var theClass = ClassA;
     
-#### Constructors
+### Constructors
 
 Objects on the client are constructed as one would expect, using the new
 operator.  Upon construction, one can pass any number of properties to the
 constructor in an associative array.
 
+Note - it is perfectly okay to include
+properties on the client that are not defined on the server.
+
     var myObject = new ClassA({property1: "val", property2: 5});
     
-#### Remote Methods
+### Remote Methods
 
 Methods marked as @Remote are available from the client.  Both static and
 instance methods can be marked as @Remote, and they are accessed from the client
@@ -253,7 +256,7 @@ using the same syntax as in Java.
     
     typeof(new Account().nonRemoteStaticMethod) == "undefined";
 
-#### Inheritance
+### Inheritance
 
 Objects on the client follow the same inheritance hierarchy as objects on the
 server.
@@ -284,7 +287,7 @@ server.
     
     typeof(aChild.parentMethod) == "function";
     
-#### Remote Method Invocation
+### Remote Method Invocation
 
 On the client-side, remote methods are actually factories for remote invocations.
 They accept all of the same parameters as the server-sider method., plus a final
@@ -335,7 +338,7 @@ Remote invocations are reusable, so you can call go() as many times as you like.
     // Do it again if you want
     remoteInvocation.go();
     
-#### Exception Handling
+### Exception Handling
 
 Mwanzia allows clients to handle exceptions from remote methods using a similar
 syntax as Java.  Exceptions are typed and polymorphic, for maximum compatibility
@@ -378,7 +381,7 @@ and pass in an associative array of exception types and handler functions.
         }
     });
 
-#### Passing Parameters
+### Passing Parameters
 
 Remote methods can include parameters, including both primitive as well as
 reference types.
@@ -417,14 +420,19 @@ reference types.
     
 ##### JavaScript
 
-    var message = new Message({ text: new TextContainer({text: "Hello world"}),
-                                date: new Date()});
+    var message = new Message({text: new TextContainer({text: "Hello world"}),
+                               date: new Date()});
     var service = new Service();
     
     // This will print the message 5 times on the server
     service.printMessage(message, 5).go();
     
-#### Passing Instance Data
+For brevity, you can omit the types of the parameter and they will be inferred.
+
+    service.printMessage({text: {text: "Hello World},
+                          date: new Date()});
+                          
+### Passing Instance Data
 
 When calling an instance of an object, you may want to set some or all of its
 properties from the client and make these available on the server.  You do this
@@ -487,7 +495,7 @@ persistent entity.
 Mwanzia includes a plugin that supports authentication and method-level
 authorization using [Apache Shiro](http://shiro.apache.org/).
 
-### Plugins
+## Plugins
 
 In order to support the use of Mwanzia in a variety of contexts, the core of
 Mwanzia is extremely slim on features and focuses purely on remoting from
@@ -577,3 +585,34 @@ On the client, you can then do something like this:
 All persistent types are automatically exported to the client and eligible for
 remote access.  Individual methods still need to be marked as @Remote to allow
 remote invocation.
+
+#### Configuration
+
+// TODO:
+
+### Transaction Plugin
+
+This plugin automatically starts and stops transactions on every remote invocation.
+It works very nicely in coordination with the JPA plugin.
+
+### Validation Plugin
+
+This plugin supports declarative validation constraints using [OVal](http://oval.sourceforge.net/).
+
+Constraint violations generate ValidationExceptions.  Built-in basic constraints
+like required, length, etc can be validated both on the client and on the server.
+
+Client-side validation failures throw exactly the same exception as server-side
+failures, providing a unified programming model for validation.
+
+### Shiro Plugin
+
+Using [Apache Shiro](http://shiro.apache.org/), this plugin will the ability
+to authenticate and authorize calls from the client.  It will support the
+following Shiro annotations:
+
++ @RequiresAuthentication
++ @RequiresPermissions
++ @RequiresRoles
++ @RequiresUser
+
