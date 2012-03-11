@@ -185,6 +185,37 @@ Mwanzia has a number of JavaScript dependencies.
    instance of the appropriate type, and then set all properties marked as
    @Transferable (in this case, the property "id").  Then it calls the method.
    
+### Core Features
+
+Mwanzia exports Java object models to JavaScript and makes certain methods
+available for remote invocation.  In so doing, it attempts to match the client-
+side semantics to the server-side as closely as possible.  The main difference
+is remote invocations are asynchronous, so there's some special syntax for
+dealing with them.  That's it.
+
+#### Namespaces
+
+Objects on the client are namespaced just like on the server.
+
+##### Java
+
+    package org.mwanzia.demo;
+    
+    public class ClassA {}
+    
+##### JavaScript
+
+    // We can reference ClassA fully qualified
+    var theClass = org.mwanzia.demo.ClassA;
+    
+    // Or we can import the package and then reference it unqualified
+    mwanziaImportPackage(org.mwanzia.demo);
+    var theClass = ClassA;
+    
+#### Constructors
+
+#### Exception Handling
+
 ### Security
 
 Mwanzia takes various steps to prevent JavaScript clients from gaining access
@@ -215,10 +246,6 @@ persistent entity.
 
 Mwanzia includes a plugin that supports authentication and method-level
 authorization using [Apache Shiro](http://shiro.apache.org/).
-
-### Core Features
-
-#### Exception Handling
 
 ### Plugins
 
@@ -271,8 +298,8 @@ For example:
     
 On client:
 
-    var customer = // get the customer from somewhere;
     var account = // get the account from somewhere
+    var customer = // get the customer from somewhere;
     
     account.linkToCustomer(customer, function(updatedAccount) {
         // handle the updatedAccount
@@ -288,7 +315,23 @@ id on the client-side, like so:
     account.linkToCustomer(5, function(updatedAccount) {
         // handle the updatedAccount
     }).go();
+    
+Parameters can also be passed by value, if marked with the @ByValue annotation:
 
+    public Account linkToCustomer(@ByValue Customer customer) {
+            this.customers.add(customer);
+            return this;
+        }
+
+On the client, you can then do something like this:
+
+    var account = // get the account from somewhere
+    var customer = new Customer({firstName: "Bob", lastName: "Smith"});
+    
+    account.linkToCustomer(customer, function(updatedAccount) {
+        // handle the updatedAccount
+    }).go();
+    
 #### Automatic Remote Registration
 
 All persistent types are automatically exported to the client and eligible for
