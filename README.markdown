@@ -343,6 +343,19 @@ Remote invocations are reusable, so you can call go() as many times as you like.
     // Do it again if you want
     remoteInvocation.go();
     
+### Named Parameters
+
+In addition to passing parameters positionally as in the above example, you
+can also pass named parameters.  To do so, simply pass your parameters as an
+associative array.
+
+##### JavaScript
+
+    var remoteInvocation = SampleClass.speak({text: "Hello", loud: true}).success(function(returnValue) {
+        // This is true
+        returnValue == "I spoke loudly";
+    }).go();
+    
 ### Exception Handling
 
 Mwanzia allows clients to handle exceptions from remote methods using a similar
