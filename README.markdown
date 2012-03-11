@@ -177,11 +177,52 @@ Mwanzia has a number of JavaScript dependencies.
 
 2. When you call a remote method like list() in the browser, the JavaScript
    object dispatches this to the server via the MwanziaServlet.  In the case of
-   a static method like this, MwanziaServlet simply invokes the static method
+   a static method like list(), MwanziaServlet simply invokes the static method
    on the server and then returns the result to the client.
    
 3. In addition to calling static methods, you may also call instance methods
    like close(). When you do this, MwanziaServlet will first instantiate an
    instance of the appropriate type, and then set all properties marked as
-   @Transferable.  Then it calls the method.
+   @Transferable (in this case, the property "id").  Then it calls the method.
    
+### Security
+
+Mwanzia takes various steps to prevent JavaScript clients from gaining access
+to functionality and data that they ought not to.
+
+#### Class Whitelisting
+
+Only classes registered as remote within your Application are accessible from
+the client.
+
+#### Method Whitelisting
+
+Only methods marked as @Remote are accessible from the client.
+
+#### Property White- or Blacklisting
+
+Your Mwanzia Application can use either whitelisting or blacklisting to
+restrict client-side access to properties on your Java beans.  The default mode
+is white-listing.
+
++ *@JsonProperty* - add this to the getter method to whitelist the property
+
++ *@JsonIgnore* - add this to the getter method to blacklist the property
+
+#### JPA Pass-by-Reference
+
+When using the JPA Plugin, all non-primitive method parameters are passed
+by reference unless marked with @ByValue.  This prevents the client from passing
+in a persistent entity and inadvertently or maliciously modifying that
+persistent entity.
+
+#### Apache Shiro Plugin
+
+Mwanzia includes a plugin that supports authentication and method-level
+authorization using [Apache Shiro](http://shiro.apache.org/).
+
+### Plugins
+
+
+### JPA Support
+
