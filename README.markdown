@@ -327,6 +327,7 @@ instantiating an object of that type.
     person.visible == true;
     
     // Mix in some more stuff
+    
     Person.mixin({
         additionalProperty: 55
     });
