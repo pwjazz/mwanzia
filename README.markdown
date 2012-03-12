@@ -1,9 +1,10 @@
 # Mwanzia Overview
 
 Mwanzia provides a mechanism for seamless remote binding from JavaScript to
-server-side Java objects via an HTTP transport. Mwanzia keeps the semantics on
-the client as similar as possible to the server-side, and in general aims to
-make programming on the client feel like you're programming on the server.
+server-side Java objects via an AJAX over HTTP transport. Mwanzia keeps the
+semantics on the client as similar as possible to the server-side, and in
+general aims to make programming on the client feel like you're programming on
+the server.
 
 Unlike [GWT](http://code.google.com/webtoolkit/), Mwanzia is not a UI framework.
 Consequently, the server-side Java code does not need to contain any UI-related
@@ -11,10 +12,33 @@ logic or configuration. This makes Mwanzia suitable for binding directly from a
 JavaScript UI to a domain model without needing to create any server-side
 UI components.
 
-For a full example, see the [JavaScript Demo Code](https://github.com/pwjazz/mwanzia/blob/master/WebContent/core_tests.html) and the corresponding [Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
-Otherwise, read on.
+A primary goal for Mwanzia is to avoid turning into a leaky abstraction.  In an
+application that uses Mwanzia, you will have some objects that are exported via
+Mwanzia and some that are not.  Basically, the Mwanzia objects behave just like
+all your other objects, except that they support remoting which introduces the
+following peculiarities:
 
-## Contrived Example
++ JavaScript objects may include some asynchronous remote methods which have
+  their own calling conventions that are explained below.
+  
++ Some Java objects have one or more remotely accessible methods identified by
+  the @Remote annotation.
+  
++ Some Java objects can be sent to/from the client as JSON and you need to deal
+  with the usual things like handling cyclic references, Hibernate lazy loading
+  and so on.
+  
+In keeping with Mwanzia's "no leak" philosophy, the core of Mwanzia does
+remoting and nothing else.  Mwanzia does provide a plugin mechanism that allows
+it to be extended to support things like JPA, validation and other
+application-specific functionality that may be related to remoting but isn't
+strictly necessary.
+  
+If you want to dive right in, take a look at our [JavaScript Tests](https://github.com/pwjazz/mwanzia/blob/master/WebContent/core_tests.html) and the corresponding [Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
+
+For a gentler introduction, read on.
+
+## Somewhat Contrived Example
 
 ### Java Code
 
@@ -298,6 +322,11 @@ Client-side classes can be enhanced with additional properties and methods using
 the mixin() static method.  mixin() can be called multiple times, and because it
 modifies the Class's prototype, it can be called either before or after
 instantiating an object of that type.
+
+mixin() is syntactic sugar - you can accomplish the same thing as
+mixin({??? : XXX}) using Class.prototype.??? = XXX, but Percy finds mixin()
+easier to read, especially when mixing in lots of stuff.  mixin's syntax is also
+consistent with John Resig's Class.extend(), making for a bit of symmetry.
 
 ##### Java
 
