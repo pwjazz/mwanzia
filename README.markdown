@@ -292,6 +292,50 @@ server.
     
     typeof(aChild.parentMethod) == "function";
     
+### Mixins
+
+Client-side versions of objects can be enhanced with additional properties and
+methods using the mixin() static method.  Mixin can be called multiple times,
+and because it modifies the object's prototype, it can be called either before
+or after instantiating the relevant object.
+
+##### Java
+
+    public class Person {
+        private String firstName;
+        private String lastName;
+        
+        // Define getters and setters
+    }
+
+##### JavaScript
+
+    Person.mixin({
+        visible: true,
+        
+        getFullName: function() {
+            return this.firstName + " " + this.lastName;
+        }
+    });
+    
+    var person = new Person({firstName: "Bob", lastName: "Smith"});
+    
+    // The below are true
+    
+    person.getFullName() == "Bob Smith";
+    
+    person.visible == true;
+    
+    Person.mixin({
+        additionalProperty: 55
+    });
+    
+    // The below are true
+    
+    person.additionalProperty == 55;
+    
+    person.visible == true; // this is still true
+    
 ### Remote Method Invocation
 
 On the client-side, remote methods are actually factories for remote invocations.

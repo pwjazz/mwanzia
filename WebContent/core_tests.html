@@ -25,6 +25,12 @@
             mwanziaImport();
             mwanziaImportPackage(org.mwanzia.test);
             
+            Person.mixin({
+            	getFullName: function() {
+            		return this.firstName + " " + this.lastName;
+            	}
+            });
+            
             var easyunit_tests = {
                 "Verify Class Definitions": function(){
                     assertEquals("Static method", "function", typeof(Company.create));
@@ -62,6 +68,7 @@
                                             assertTrue("Manager type", manager instanceof Employee);
                                             assertTrue("Manager inheritance from Person", manager instanceof Person);
                                             assertEquals("Manager name", "First Manager", manager.firstName + " " + manager.lastName);
+                                            assertEquals("Manager full name", "First Manager", manager.getFullName());
                                             console.debug("Open a branch with invalid address");
                                             company.newBranch(manager.byReference(), "Austin Branch", new Address({
                                                 line1: "2110 Slaughter Lane",
