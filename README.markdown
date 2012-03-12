@@ -294,10 +294,10 @@ server.
     
 ### Mixins
 
-Client-side versions of objects can be enhanced with additional properties and
-methods using the mixin() static method.  Mixin can be called multiple times,
-and because it modifies the object's prototype, it can be called either before
-or after instantiating the relevant object.
+Client-side classes can be enhanced with additional properties and methods using
+the mixin() static method.  mixin() can be called multiple times, and because it
+modifies the Class's prototype, it can be called either before or after
+instantiating an object of that type.
 
 ##### Java
 
@@ -326,15 +326,18 @@ or after instantiating the relevant object.
     
     person.visible == true;
     
+    // Mix in some more stuff
     Person.mixin({
         additionalProperty: 55
     });
     
-    // The below are true
+    // The below is true
     
     person.additionalProperty == 55;
     
-    person.visible == true; // this is still true
+    // The below is still true
+    
+    person.visible == true;
     
 ### Remote Method Invocation
 
