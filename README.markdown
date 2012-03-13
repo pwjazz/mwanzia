@@ -34,7 +34,10 @@ it to be extended to support things like JPA, validation and other
 application-specific functionality that may be related to remoting but isn't
 strictly necessary.
   
-If you want to dive right in, take a look at our [JavaScript Tests](https://github.com/pwjazz/mwanzia/blob/master/WebContent/core_tests.html) and the corresponding [Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
+If you want to dive right in, take a look at our live [JavaScript Tests](http://ec2-23-20-152-26.compute-1.amazonaws.com:8080/mwanzia/core_tests.html).
+
+This is a full featured Mwanzia application demonstrating use of the JPA and
+Validation plugins.  Here is the corresponding [Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
 
 For a gentler introduction, read on.
 
