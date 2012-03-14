@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
+<?xml version="1.0" encoding="MacRoman" standalone="no"?>
 <jardesc>
-    <jar path="WebServices/EarContent/lib/mwanzia.jar"/>
-    <options buildIfNeeded="true" compress="true" descriptionLocation="/mwanzia/jarexport.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="false" storeRefactorings="false" useSourceFolders="false"/>
+    <jar path="mwanzia/dist/mwanzia-0.1.0.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/mwanzia/jarexport.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
     <manifest generateManifest="true" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">

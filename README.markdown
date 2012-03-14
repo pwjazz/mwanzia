@@ -162,17 +162,50 @@ method registerRemote().
 <table>
     <tr>
         <th>Required By</th>
-        <th>Depenency</th>
+        <th>Dependency</th>
         <th>Jar</th>
     </tr>
     <tr>
         <td>Core</td>
-        <td><a href="http://paranamer.codehaus.org/">Paranamer</a></td>
-        <td><a href="https://github.com/pwjazz/mwanzia/blob/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar">paranamer-2.2.1.jar</a></td>
+        <td></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/dist/mwanzia-0.1.0.jar">mwanzia-0.1.0.jar</a></td>
     </tr>
-    
+    <tr>
+        <td>Core</td>
+        <td><a href="http://jackson.codehaus.org/">Jackson Core</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/jackson-core-lgpl-1.6.0.jar">jackson-core-lgpl-1.6.0.jar</a></td>
+    </tr>
+    <tr>
+        <td>Core</td>
+        <td><a href="http://jackson.codehaus.org/">Jackson Mapper</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/jackson-mapper-lgpl-1.6.0.jar">jackson-mapper-lgpl-1.6.0.jar</a></td>
+    </tr>
+    <tr>
+        <td>Core</td>
+        <td><a href="http://paranamer.codehaus.org/">Paranamer</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar">paranamer-2.2.1.jar</a></td>
+    </tr>
+    <tr>
+        <td>Core</td>
+        <td><a href="http://www.slf4j.org/">SLF4J</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/slf4j-api-1.6.1.jar">slf4j-api-1.6.1.jar</a></td>
+    </tr>
+    <tr>
+        <td>Core</td>
+        <td><a href="http://commons.apache.org/beanutils/">Commons BeanUtils</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-bean-utils-core-1.8.3.jar">commons-bean-utils-core-1.8.3.jar</a></td>
+    </tr>
+    <tr>
+        <td>JPA Plugin</td>
+        <td>JPA 2.0 API</td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/hibernate-jpa-2.0-api-1.0.0.Final.jar">hibernate-jpa-2.0-api-1.0.0.Final.jar</a></td>
+    </tr>
+    <tr>
+        <td>Validation Plugin</td>
+        <td><a href="http://oval.sourceforge.net">OVal</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/oval-1.61.jar">oval-1.61.jar</a></td>
+    </tr>
 </table>
-
 
 ### Client-Side Dependencies
 

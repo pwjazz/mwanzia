@@ -1,10 +1,7 @@
-Required
---------
+Runtime Required
+----------------
 jackson-core-lgpl-1.6.0.jar
 jackson-mapper-lgpl-1.6.0.jar
 paranamer-2.2.1.jar
 slf4j-api-1.6.1.jar
-
-JPA
----
 commons-bean-utils-core-1.8.3.jar
