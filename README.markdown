@@ -159,12 +159,20 @@ method registerRemote().
 
 ### Server-Side Dependencies
 
-Mwanzia core's only runtime dependency is
-[Paranamer](http://paranamer.codehaus.org/).  You can find the jar file
-[here](https://github.com/pwjazz/mwanzia/blob/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar).
+<table>
+    <tr>
+        <th>Required By</th>
+        <th>Jar</th>
+        <th>Website</th>
+    </tr>
+    <tr>
+        <td>Core</td>
+        <td>[paranamer-2.2.1.jar](https://github.com/pwjazz/mwanzia/blob/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar)
+        <td>[Paranamer](http://paranamer.codehaus.org/)</td>
+    </tr>
+    
+</table>
 
-Mwanzia plugins have additional dependencies depending on which features you
-use.
 
 ### Client-Side Dependencies
 
