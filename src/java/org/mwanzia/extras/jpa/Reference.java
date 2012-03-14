@@ -1,12 +1,9 @@
 package org.mwanzia.extras.jpa;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Id;
-import javax.persistence.Version;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.codehaus.jackson.JsonParser;
@@ -29,8 +26,7 @@ import org.mwanzia.MwanziaException;
 @JsonDeserialize(using = Reference.ReferenceDeserializer.class)
 public class Reference {
     /**
-     * A stub of the referenced object containing only the @class, id and
-     * version
+     * A stub of the referenced object containing only the @class and id
      */
     private Object stub;
 
@@ -45,32 +41,11 @@ public class Reference {
     public Object dereference() {
         try {
             Class targetClass = stub.getClass();
-            // Find id and version
-            Object id = null;
-            Object version = null;
-            String versionPropertyName = null;
-            // Find a more efficient way to identify ID and Version properties
-            // (and ideally not limited to annotations)
-            for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(targetClass)) {
-                if ((descriptor.getReadMethod() != null && descriptor.getReadMethod().isAnnotationPresent(Id.class))
-                        || (descriptor.getWriteMethod() != null && descriptor.getWriteMethod()
-                                .isAnnotationPresent(Id.class))) {
-                    id = descriptor.getReadMethod().invoke(stub);
-                } else if ((descriptor.getReadMethod() != null && descriptor.getReadMethod()
-                        .isAnnotationPresent(Version.class))
-                        || (descriptor.getWriteMethod() != null && descriptor.getWriteMethod()
-                                .isAnnotationPresent(Version.class))) {
-                    versionPropertyName = descriptor.getName();
-                    version = descriptor.getReadMethod().invoke(stub);
-                }
-            }
+            // Find id
+            Object id = PropertyUtils.getProperty(stub, "id");
             // For entities, re-read the entity from the session
-            EntityManager em = JPAPlugin.getCurrentEntityManager();
+            EntityManager em = AbstractJPAPlugin.getCurrentEntityManager();
             Object result = em.find(targetClass, id);
-            if (versionPropertyName != null && version != null && ((Long) version) != 0L) {
-                // Set the version if available
-                PropertyUtils.setProperty(result, versionPropertyName, version);
-            }
             return result;
         } catch (Exception e) {
             throw new MwanziaException(String.format("Unable to dereference object %1$s", stub), e);

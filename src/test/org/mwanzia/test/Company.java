@@ -14,7 +14,7 @@ import javax.persistence.OneToMany;
 import net.sf.oval.constraint.AssertValid;
 import net.sf.oval.guard.Guarded;
 
-import org.apache.shiro.authz.annotation.RequiresUser;
+import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.codehaus.jackson.annotate.JsonManagedReference;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.mwanzia.Remote;
@@ -35,7 +35,7 @@ public class Company extends AbstractEntity {
     }
 
     @Remote
-    @RequiresUser
+    @RequiresAuthentication
     public static Company create(@Required String name) {
         Company company = new Company(name);
         JPA.getInstance().getEntityManager().persist(company);

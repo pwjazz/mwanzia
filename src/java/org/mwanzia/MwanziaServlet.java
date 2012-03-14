@@ -70,7 +70,7 @@ public class MwanziaServlet extends HttpServlet {
 			resp.setContentLength(data.length);
 			resp.getOutputStream().write(data);
 		} catch (Exception e) {
-			throw new ServletException(e.getMessage(), e);
+		    throw new ServletException(e.getMessage(), e);
 		}
 	}
 

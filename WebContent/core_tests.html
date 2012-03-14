@@ -148,21 +148,28 @@
                                                                         assertEquals("New account balance", 5.98, transaction.account.balance);
                                                                         account.reload().success(function(reloadedAccount){
                                                                         	assertEquals("Reloaded account balance", 5.98, reloadedAccount.balance);
-                                                                            account.close().success(function(closedAccount){
-                                                                                assertTrue("Account closed", closedAccount.closed);
-                                                                                new Transaction({
-                                                                                    account: account.byReference(),
-                                                                                    amount: -10.00,
-                                                                                    memo: "This is a test debit"
-                                                                                }).submit().success(function(transaction){
-                                                                                    assertTrue("No exception thrown when transacting on closed account", false);
-                                                                                }).catchException({
-                                                                                    "org.mwanzia.test.AccountClosedException": function(exception){
-                                                                                        assertEquals("Exception message", "Account " + account.number + " is already closed", exception.message);
-                                                                                        assertTrue("*** TEST COMPLETED SUCCESSFULLY ***", true);
-                                                                                    }
-                                                                                }).go();
-                                                                            }).go();
+                                                                        	account.setHugeBalance().success(function(updatedAccount) {
+                                                                        		assertTrue("No exception thrown when attempting to set huge balance", false);
+                                                                        	}).catchException({
+                                                                        		"org.mwanzia.extras.security.shiro.AuthorizationException": function(exception){
+                                                                        			assertEquals("Authorization exception message", "Missing required role: toomuchpowerforanyone", exception.message);
+                                                                			        account.close().success(function(closedAccount){
+                                                                                        assertTrue("Account closed", closedAccount.closed);
+                                                                                    	new Transaction({
+                                                                                            account: account.byReference(),
+                                                                                            amount: -10.00,
+                                                                                            memo: "This is a test debit"
+                                                                                        }).submit().success(function(transaction){
+                                                                                            assertTrue("No exception thrown when transacting on closed account", false);
+                                                                                        }).catchException({
+                                                                                            "org.mwanzia.test.AccountClosedException": function(exception){
+                                                                                                assertEquals("Transaction on closed account exception message", "Account " + account.number + " is already closed", exception.message);
+                                                                                                assertTrue("*** TEST COMPLETED SUCCESSFULLY ***", true);
+                                                                                            }
+                                                                                        }).go();
+                                                                    				}).go();
+                                                                        		}
+                                                                        	}).go();
                                                                         }).go();
                                                                     }).go();
                                                                 }).go();
@@ -180,6 +187,12 @@
                 }
             }
         </script>
+        
+        <style type="text/css">
+            td {
+                white-space: nowrap;
+            }
+        </style>
     </head>
     <body>
         <p>

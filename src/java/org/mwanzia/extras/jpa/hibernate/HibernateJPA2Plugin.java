@@ -7,7 +7,7 @@ import org.mwanzia.JSON.SerializationModifier;
 import org.mwanzia.extras.jpa.JPA2Plugin;
 
 /**
- * Special version of JPA plugin that adds support for remote lazy loading (if
+ * Special version of JPA2Plugin that adds support for remote lazy loading (if
  * using Hibernate).
  * 
  * @author percy

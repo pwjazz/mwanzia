@@ -32,7 +32,7 @@ public abstract class TransactionPlugin<T> extends Plugin {
                 }
             }
 
-            public <E extends Throwable> E invocationFailed(E exception) throws Exception {
+            public Throwable invocationFailed(Throwable exception) throws Exception {
                 try {
                     rollback((T) CURRENT_TRANSACTION.get());
                     return exception;

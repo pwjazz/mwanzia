@@ -2,6 +2,7 @@ package org.mwanzia.extras.jpa;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.metamodel.ManagedType;
@@ -22,7 +23,7 @@ import org.mwanzia.Interceptor;
  * 
  * @author percy
  */
-public abstract class JPA2Plugin extends JPAPlugin {
+public abstract class JPA2Plugin extends AbstractJPAPlugin {
     @Override
     public Interceptor buildInterceptor() {
         return new JPA2Interceptor();
@@ -30,7 +31,7 @@ public abstract class JPA2Plugin extends JPAPlugin {
 
     @Override
     public List<Class> getRemoteTypes() {
-        List<Class> remoteTypes = super.getRemoteTypes();
+        List<Class> remoteTypes = new ArrayList<Class>(super.getRemoteTypes());
         for (ManagedType managedType : getEntityManager().getEntityManagerFactory().getMetamodel().getManagedTypes()) {
             remoteTypes.add(managedType.getJavaType());
         }

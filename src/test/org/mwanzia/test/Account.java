@@ -12,6 +12,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.codehaus.jackson.annotate.JsonBackReference;
 import org.codehaus.jackson.annotate.JsonManagedReference;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -38,7 +39,16 @@ public class Account extends AbstractEntity {
         this.number = number;
         this.dateOpened = dateOpened;
     }
+    
+    // The below intentionally has an extra comma and extra whitespace
+    // to make sure Mwanzia can handle it
+    @RequiresRoles("corporate, , toomuchpowerforanyone")
+    @Remote
+    public Account setHugeBalance() {
+        return this;
+    }
 
+    @RequiresRoles("corporate")
     @Remote
     public Account close() throws AccountClosedException {
         if (this.isClosed())

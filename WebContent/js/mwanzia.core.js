@@ -167,6 +167,8 @@ mwanzia.AjaxInvocation = Class.extend({
                     break;
                 }
             }
+            if (defaultHandler == null)
+            	defaultHandler = mwanzia._defaultHandlers.exception;
             if (!handled) 
                 defaultHandler(exception);
         });

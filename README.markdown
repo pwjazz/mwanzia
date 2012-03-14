@@ -1,5 +1,7 @@
 # Mwanzia Overview
 
+NOTE - Mwanzia is still under development
+
 Mwanzia provides a mechanism for seamless remote binding from JavaScript to
 server-side Java objects via an AJAX over HTTP transport. Mwanzia keeps the
 semantics on the client as similar as possible to the server-side, and in
@@ -30,14 +32,16 @@ following peculiarities:
   
 In keeping with Mwanzia's "no leak" philosophy, the core of Mwanzia does
 remoting and nothing else.  Mwanzia does provide a plugin mechanism that allows
-it to be extended to support things like JPA, validation and other
-application-specific functionality that may be related to remoting but isn't
-strictly necessary.
+it to be extended to support things like JPA, validation, authentication/
+authorization and other application-specific functionality that may be related
+to remoting but aren't strictly necessary.
   
-If you want to dive right in, take a look at our live [JavaScript Tests](http://ec2-23-20-152-26.compute-1.amazonaws.com:8080/mwanzia/core_tests.html).
+If you want to dive right in, take a look at our live
+[JavaScript Tests](http://ec2-23-20-152-26.compute-1.amazonaws.com:8080/mwanzia/core_tests.html).
 
-This is a full featured Mwanzia application demonstrating use of the JPA and
-Validation plugins.  Here is the corresponding [Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
+This is a full featured Mwanzia application demonstrating use of the JPA,
+validation and Shiro authentication/authorization plugins.  Here is the corresponding
+[Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
 
 For a gentler introduction, read on.
 
@@ -153,7 +157,16 @@ method registerRemote().
         <url-pattern>/server.js</url-pattern>
     </servlet-mapping>
 
-### Script Imports
+### Server-Side Dependencies
+
+Mwanzia core's only runtime dependency is
+[Paranamer](http://paranamer.codehaus.org/).  You can find the jar file
+[here](https://github.com/pwjazz/mwanzia/blob/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar).
+
+Mwanzia plugins have additional dependencies depending on which features you
+use.
+
+### Client-Side Dependencies
 
 Mwanzia has a number of JavaScript dependencies.
 
@@ -204,6 +217,8 @@ Mwanzia has a number of JavaScript dependencies.
 1. When you include server.js on your page, it imports dynamically created
    JavaScript that defines the client-side version of your object model.  A look
    at this file will explain much about the magic that happens on the client-side.
+   This file is also useful for auditing what has been exposed from your system
+   via Mwanzia.
 
 2. When you call a remote method like list() in the browser, the JavaScript
    object dispatches this to the server via the MwanziaServlet.  In the case of
@@ -256,6 +271,50 @@ Note - it is perfectly okay to include
 properties on the client that are not defined on the server.
 
     var myObject = new ClassA({property1: "val", property2: 5});
+    
+### JavaBean Properties
+
+JavaBean properties, both instance and static, are available on the client as
+JavaScript properties.  Derived properties are also available.
+
+Properties are only available if the object was read from the server.
+
+##### Java
+
+    public class MyClass {
+        private static String staticProp = "A";
+        private String instanceProp = "B";
+        
+        public static String getStaticProp() {
+            return staticProp;
+        }
+        
+        public String getInstanceProp() {
+            return instanceProp;
+        }
+        
+        public String getDerivedProp() {
+            return "C";
+        }
+    }
+    
+##### JavaScript
+
+    var obj = // read instance of MyClass from server
+    
+    // All of the following are true
+    
+    MyClass.staticProp == "A";
+    
+    obj.instanceProp == "B";
+    
+    obj.derivedProp == "C";
+    
+    // All of the following are also true
+    
+    typeof(new MyClass().instanceProp) == "undefined";
+    
+    typeof(new MyClass().derivedProp) == "undefined";
     
 ### Remote Methods
 
@@ -444,6 +503,7 @@ with the patterns you're accustomed to in Java.
 
 To handle an exception, use the catchException() method on a remote invocation
 and pass in an associative array of exception types and handler functions.
+catchException also accepts a default handler that will handle any exception.
 
 ##### Java
 
@@ -473,10 +533,11 @@ and pass in an associative array of exception types and handler functions.
     }).catchException({
         "org.mwanzia.demo.MyException": function(exception) {
             alert("Caught MyException with error code: " + exception.errorCode);
-        },
-        "java.lang.Exception": function(exception) {
-            alert("Caught unexpected exception with message: " + exception.message);
         }
+    }, function(exception) {
+        // This is the default handler in case exception didn't match a specific
+        // type
+        alert("Caught unexpected exception with message: " + exception.message);
     });
 
 ### Passing Parameters
@@ -602,11 +663,16 @@ it includes a few plugins to support common usage patterns.
 
 ### JPA Support
 
+note - requires JPA2 or Hibernate
+
 Mwanzia is particularly well suited to binding from JavaScript to a persistent
 server-side domain model.  In fact, this is the scenario for which Mwanzia
-was originally authored.  The JPA plugin (currently implemented for Hibernate)
-supports this pattern.
+was originally authored.  The JPA plugin supports this patterns.
 
+The JPA plugin is framework agnostic - you provide the hook for obtaining an
+EntityManager from your own environment.  The only requirement is that you use
+only 1 EntityManager per thread.
+ 
 The JPA plugin provides several key features:
 
 #### Managing Object Identity
@@ -684,10 +750,58 @@ All persistent types are automatically exported to the client and eligible for
 remote access.  Individual methods still need to be marked as @Remote to allow
 remote invocation.
 
-#### Optimistic Locking
+#### Automatic Handling for Lazy Loading
 
-The JPA plugin supports your application's use of optimistic locking as long
-as the version field is called "version".
+TODO
+
+#### Remote Lazy Loading (Hibernate Only)
+
+To handle lazy-loaded associations, the plugin supports remote lazy loading.
+The first time that you use the accessor method for a lazy-loaded property
+in JavaScript, Mwanzia will make a remote call.  On subsequent reads, Mwanzia
+will use the already loaded value.
+
+To clear locally cached values, call clear() on the remote invocation.
+
+Just mark your getter method with @Remote to enable this.
+
+##### Java
+
+    public class Related {
+    
+    }
+    
+    public class Owner {
+        private Related related;
+        
+        @ManyToOne
+        @Remote
+        public Related getRelated() {
+            return related;
+        }
+    }
+    
+##### JavaScript
+
+    var owner = // get owner somehow;
+    
+    var related = null;
+    
+    owner.getRelated().success(function(_related) {
+        // This first time makes a remote call
+        related = _related;
+    });
+    
+    owner.getRelated().success(function(_related) {
+        // This time we're getting a cached value
+        related = _related;
+    });
+    
+    // We can also access the property directly now
+    related = owner.related;
+    
+    // Now we clear the cached value
+    owner.getRelated().clear();
 
 #### Configuration
 
@@ -710,12 +824,11 @@ failures, providing a unified programming model for validation.
 
 ### Shiro Plugin
 
-Using [Apache Shiro](http://shiro.apache.org/), this plugin will the ability
-to authenticate and authorize calls from the client.  It will support the
-following Shiro annotations:
+Using [Apache Shiro](http://shiro.apache.org/), this plugin provides the ability
+to authenticate and authorize calls from the client.  It supports the following
+Shiro annotations:
 
 + @RequiresAuthentication
-+ @RequiresPermissions
 + @RequiresRoles
-+ @RequiresUser
 
+In the future, we will add support for @RequiresUser and @RequiresPermissions

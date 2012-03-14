@@ -18,7 +18,7 @@ import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.mwanzia.Application;
 import org.mwanzia.Remote;
-import org.mwanzia.extras.jpa.hibernate.HibernateJPA1Plugin;
+import org.mwanzia.extras.jpa.hibernate.HibernateJPA2Plugin;
 import org.mwanzia.extras.security.shiro.ShiroPlugin;
 import org.mwanzia.extras.security.shiro.ShiroSecuredApplication;
 import org.mwanzia.extras.transactions.TransactionPlugin;
@@ -54,7 +54,7 @@ public class TestApplication extends Application implements ShiroSecuredApplicat
                 transaction.rollback();
             }
         });
-        registerPlugin(new HibernateJPA1Plugin() {
+        registerPlugin(new HibernateJPA2Plugin() {
             @Override
             protected EntityManager getEntityManager() {
                 return JPA.getInstance().getEntityManager();
@@ -84,7 +84,7 @@ public class TestApplication extends Application implements ShiroSecuredApplicat
         // If one of the out-of-the-box Shiro realms works for you, you can just
         // configure that in shiro.ini.
         // The below implementation just echos whatever username and password
-        // where passed in (i.e. everyone authenticates)
+        // were passed in (i.e. everyone authenticates)
         String username = (String) token.getPrincipal();
         // Hash password using username as salt and doing 1024 iterations
         String hashedPassword = new Sha256Hash(token.getCredentials(), username, 1024).toBase64();

@@ -23,8 +23,7 @@ mwanzia.Reference = Class.extend({
         this["@class"] = "org.mwanzia.extras.jpa.Reference";
         this.stub = {
             "@class": original["@class"],
-            "id": original["id"],
-            "version": original["version"]
+            "id": original["id"]
         };
     }
 });

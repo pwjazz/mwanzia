@@ -4,6 +4,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,18 +24,18 @@ import org.mwanzia.Interceptor;
 import org.mwanzia.JSON;
 import org.mwanzia.JSON.SerializationModifier;
 import org.mwanzia.MwanziaError;
+import org.mwanzia.extras.jpa.AbstractJPAPlugin;
 import org.mwanzia.extras.jpa.ByValue;
-import org.mwanzia.extras.jpa.JPAPlugin;
 import org.mwanzia.extras.jpa.Reference;
 
 /**
- * Special version of JPA plugin that adds support for remote lazy loading (if
- * using Hibernate).
+ * Special version of JPAPlugin that adds support for remote lazy loading (if
+ * using Hibernate).  It also enforces call by reference semantics.
  * 
  * @author percy
  * 
  */
-public abstract class HibernateJPA1Plugin extends JPAPlugin {
+public abstract class HibernateJPA1Plugin extends AbstractJPAPlugin {
     static {
         JSON.addSerializationModifier(new SerializationModifier() {
             public <T> T modify(T original) {
@@ -48,7 +49,7 @@ public abstract class HibernateJPA1Plugin extends JPAPlugin {
 
     @Override
     public List<Class> getRemoteTypes() {
-        List<Class> remoteTypes = super.getRemoteTypes();
+        List<Class> remoteTypes = new ArrayList<Class>(super.getRemoteTypes());
         for (Object entryObject : getSession().getSessionFactory().getAllClassMetadata().entrySet()) {
             Map.Entry<String, ClassMetadata> entry = (Map.Entry<String, ClassMetadata>) entryObject;
             String className = entry.getKey();

@@ -43,7 +43,13 @@ public class DefaultMwanzia extends Mwanzia {
 
 	public String call(String applicationName, String callString)
 			throws Exception {
-		return applications.get(applicationName).invoke(callString);
+		try {
+		    return applications.get(applicationName).invoke(callString);
+		} catch (Exception e) {
+            LOGGER.error(String.format("Unable to make call to application %1s: %2$s", applicationName, e.getMessage()),
+                    e);
+            throw e;
+		}
 	}
 
 	private void buildJavaScript() throws ServletException {

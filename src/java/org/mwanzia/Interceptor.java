@@ -83,13 +83,13 @@ public class Interceptor {
      * This callback fires after the remote method has been invoked, if and only
      * if the method invocation threw an exception.
      * 
-     * @param <T>
+     * @param Throwable
      * @param exception
      *            the exception thrown by the method invocation
      * @return
      * @throws Exception
      */
-    public <T extends Throwable> T invocationFailed(T exception) throws Exception {
+    public Throwable invocationFailed(Throwable exception) throws Exception {
         return exception;
     }
 }
