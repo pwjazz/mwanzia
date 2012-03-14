@@ -193,7 +193,7 @@ method registerRemote().
     <tr>
         <td>Core</td>
         <td><a href="http://commons.apache.org/beanutils/">Commons BeanUtils</a></td>
-        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-bean-utils-core-1.8.3.jar">commons-bean-utils-core-1.8.3.jar</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-beanutils-core-1.8.3.jar">commons-beanutils-core-1.8.3.jar</a></td>
     </tr>
     <tr>
         <td>JPA Plugin</td>
