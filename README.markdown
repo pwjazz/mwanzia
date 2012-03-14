@@ -162,13 +162,13 @@ method registerRemote().
 <table>
     <tr>
         <th>Required By</th>
+        <th>Depenency</th>
         <th>Jar</th>
-        <th>Website</th>
     </tr>
     <tr>
         <td>Core</td>
-        <td>[paranamer-2.2.1.jar](https://github.com/pwjazz/mwanzia/blob/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar)
-        <td>[Paranamer](http://paranamer.codehaus.org/)</td>
+        <td><a href="http://paranamer.codehaus.org/">Paranamer</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/blob/master/WebContent/WEB-INF/lib/paranamer-2.2.1.jar">paranamer-2.2.1.jar</a></td>
     </tr>
     
 </table>
