@@ -167,7 +167,7 @@ method registerRemote().
     </tr>
     <tr>
         <td>Core</td>
-        <td></td>
+        <td>Mwanzia</td>
         <td><a href="https://github.com/pwjazz/mwanzia/raw/master/dist/mwanzia-0.1.0.jar">mwanzia-0.1.0.jar</a></td>
     </tr>
     <tr>
