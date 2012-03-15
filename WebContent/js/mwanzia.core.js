@@ -391,6 +391,8 @@ mwanzia.Application = mwanzia.RemoteObject.extend({
 			dataType: "text",
             data: {
                 application: this._name,
+                targetClass: call.targetClass,
+                method: call.method,
                 call: mwanzia.stringify(call)
             },
             success: function(data, textStatus, xhr){

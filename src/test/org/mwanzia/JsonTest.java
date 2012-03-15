@@ -15,8 +15,6 @@ import org.codehaus.jackson.annotate.JsonManagedReference;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mwanzia.Call;
-import org.mwanzia.JSON;
 
 public class JsonTest {
 	@Test

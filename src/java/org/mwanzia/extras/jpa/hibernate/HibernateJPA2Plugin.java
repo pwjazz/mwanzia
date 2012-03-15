@@ -17,10 +17,7 @@ public abstract class HibernateJPA2Plugin extends JPA2Plugin {
     static {
         JSON.addSerializationModifier(new SerializationModifier() {
             public <T> T modify(T original) {
-                if (!Hibernate.isInitialized(original))
-                    return null;
-                else
-                    return original;
+                return HibernatePluginUtil.handleLazyInitialization(original);
             }
         });
     }
@@ -30,7 +27,7 @@ public abstract class HibernateJPA2Plugin extends JPA2Plugin {
         return new HibernateInterceptor();
     }
 
-    protected class HibernateInterceptor extends JPAInterceptor {
+    protected class HibernateInterceptor extends JPA2Interceptor {
         @Override
         public Object replaceResult(Object result) throws Exception {
             Hibernate.initialize(result);

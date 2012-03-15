@@ -18,6 +18,7 @@ import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.codehaus.jackson.annotate.JsonManagedReference;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.mwanzia.Remote;
+import org.mwanzia.extras.transactions.RequiresTransaction;
 import org.mwanzia.extras.validation.validators.Required;
 
 @Entity
@@ -35,6 +36,7 @@ public class Company extends AbstractEntity {
     }
 
     @Remote
+    @RequiresTransaction
     @RequiresAuthentication
     public static Company create(@Required String name) {
         Company company = new Company(name);
@@ -43,6 +45,7 @@ public class Company extends AbstractEntity {
     }
 
     @Remote
+    @RequiresTransaction
     public static void deleteAll() {
         // TODO: right now this doesn't delete anything because the foreign key
         // constraints are tricky
@@ -54,6 +57,7 @@ public class Company extends AbstractEntity {
     }
 
     @Remote
+    @RequiresTransaction
     public Employee hire(@Required String firstName, String lastName) {
         Employee employee = new Employee(this, firstName, lastName);
         this.employees.add(employee);
@@ -61,6 +65,7 @@ public class Company extends AbstractEntity {
     }
 
     @Remote
+    @RequiresTransaction
     public Branch newBranch(Employee manager, String name, @AssertValid Address address) {
         Branch branch = new Branch(this, manager, name, address);
         this.branches.put(name, branch);

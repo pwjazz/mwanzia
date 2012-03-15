@@ -8,6 +8,7 @@ import javax.persistence.ManyToOne;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.mwanzia.Remote;
 import org.mwanzia.Transferable;
+import org.mwanzia.extras.transactions.RequiresTransaction;
 
 @Entity
 @Transferable
@@ -19,6 +20,7 @@ public class Transaction extends AbstractEntity {
     private String memo;
 
     @Remote
+    @RequiresTransaction
     public Transaction submit() throws AccountClosedException {
         if (this.account.isClosed())
             throw new AccountClosedException(String.format("Account %1$s is already closed", account.getNumber()));

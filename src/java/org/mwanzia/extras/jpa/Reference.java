@@ -1,11 +1,11 @@
 package org.mwanzia.extras.jpa;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.DeserializationContext;
@@ -13,6 +13,7 @@ import org.codehaus.jackson.map.JsonDeserializer;
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 import org.mwanzia.JSON;
 import org.mwanzia.MwanziaException;
+import org.mwanzia.SmallPropertyUtils;
 
 /**
  * <p>
@@ -38,13 +39,24 @@ public class Reference {
         this.stub = stub;
     }
 
+    public Reference(Class clazz, Object id) {
+        this(buildStub(clazz, id));
+    }
+
+    private static Map<String, Object> buildStub(Class clazz, Object id) {
+        Map<String, Object> stub = new HashMap<String, Object>();
+        stub.put("@class", clazz.getName());
+        stub.put("@id", id);
+        return stub;
+    }
+
     public Object dereference() {
         try {
             Class targetClass = stub.getClass();
             // Find id
-            Object id = PropertyUtils.getProperty(stub, "id");
+            Object id = SmallPropertyUtils.readProperty(stub, "id");
             // For entities, re-read the entity from the session
-            EntityManager em = AbstractJPAPlugin.getCurrentEntityManager();
+            EntityManager em = JPAPlugin.getCurrentEntityManager();
             Object result = em.find(targetClass, id);
             return result;
         } catch (Exception e) {

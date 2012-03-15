@@ -1,16 +1,12 @@
 package org.mwanzia.extras.jpa.hibernate;
 
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.EntityMode;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
@@ -24,25 +20,22 @@ import org.mwanzia.Interceptor;
 import org.mwanzia.JSON;
 import org.mwanzia.JSON.SerializationModifier;
 import org.mwanzia.MwanziaError;
-import org.mwanzia.extras.jpa.AbstractJPAPlugin;
-import org.mwanzia.extras.jpa.ByValue;
-import org.mwanzia.extras.jpa.Reference;
+import org.mwanzia.SmallPropertyUtils;
+import org.mwanzia.SmallPropertyUtils.Property;
+import org.mwanzia.extras.jpa.JPAPlugin;
 
 /**
  * Special version of JPAPlugin that adds support for remote lazy loading (if
- * using Hibernate).  It also enforces call by reference semantics.
+ * using Hibernate). It also enforces call by reference semantics.
  * 
  * @author percy
  * 
  */
-public abstract class HibernateJPA1Plugin extends AbstractJPAPlugin {
+public abstract class HibernateJPA1Plugin extends JPAPlugin {
     static {
         JSON.addSerializationModifier(new SerializationModifier() {
             public <T> T modify(T original) {
-                if (!Hibernate.isInitialized(original))
-                    return null;
-                else
-                    return original;
+                return HibernatePluginUtil.handleLazyInitialization(original);
             }
         });
     }
@@ -90,41 +83,12 @@ public abstract class HibernateJPA1Plugin extends AbstractJPAPlugin {
 
     protected class HibernateInterceptor extends JPAInterceptor {
         @Override
-        public Object[] prepareInvocation(Object target, Method method, Object[] arguments) throws Exception {
-            Object[] modifiedArguments = new Object[arguments.length];
-            int i = 0;
-            // Force call by reference semantics for parameters that are managed
-            // entities, unless the parameter is annotated with @ByValue
-            for (Annotation[] parameterAnnotations : method.getParameterAnnotations()) {
-                Object argument = arguments[i];
-                boolean forceByReference = !Reference.class.isAssignableFrom(argument.getClass())
-                        && isManagedEntity(argument);
-                if (forceByReference && argument != null) {
-                    for (Annotation annotation : parameterAnnotations) {
-                        if (ByValue.class.isAssignableFrom(annotation.getClass())) {
-                            // Override forced by reference behavior
-                            forceByReference = false;
-                            break;
-                        }
-                    }
-                }
-                if (forceByReference) {
-                    modifiedArguments[i] = new Reference(argument).dereference();
-                } else {
-                    modifiedArguments[i] = argument;
-                }
-                i += 1;
-            }
-            return super.prepareInvocation(target, method, modifiedArguments);
-        }
-
-        @Override
         public Object replaceResult(Object result) throws Exception {
             Hibernate.initialize(result);
             return super.replaceResult(result);
         }
 
-        private boolean isManagedEntity(Object object) {
+        protected boolean isManagedEntity(Object object) {
             if (object == null)
                 return false;
             Class clazz = object.getClass();
@@ -135,10 +99,10 @@ public abstract class HibernateJPA1Plugin extends AbstractJPAPlugin {
 
     protected Session getSession() {
         EntityManager entityManager = getEntityManager();
-        for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(entityManager)) {
+        for (Property descriptor : SmallPropertyUtils.getProperties(entityManager).values()) {
             if (Session.class.isAssignableFrom(descriptor.getPropertyType()))
                 try {
-                    return (Session) descriptor.getReadMethod().invoke(entityManager);
+                    return (Session) descriptor.read(entityManager);
                 } catch (Exception e) {
                     throw new MwanziaError("Unable to read Hibernate Session from EntityManager: " + e.getMessage(), e);
                 }

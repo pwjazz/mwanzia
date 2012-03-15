@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
@@ -17,6 +18,7 @@ import org.codehaus.jackson.annotate.JsonBackReference;
 import org.codehaus.jackson.annotate.JsonManagedReference;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.mwanzia.Remote;
+import org.mwanzia.extras.transactions.RequiresTransaction;
 
 @Entity
 public class Account extends AbstractEntity {
@@ -39,7 +41,7 @@ public class Account extends AbstractEntity {
         this.number = number;
         this.dateOpened = dateOpened;
     }
-    
+
     // The below intentionally has an extra comma and extra whitespace
     // to make sure Mwanzia can handle it
     @RequiresRoles("corporate, , toomuchpowerforanyone")
@@ -50,6 +52,7 @@ public class Account extends AbstractEntity {
 
     @RequiresRoles("corporate")
     @Remote
+    @RequiresTransaction
     public Account close() throws AccountClosedException {
         if (this.isClosed())
             throw new AccountClosedException(String.format("This account was already closed on " + this.dateClosed));
@@ -58,7 +61,7 @@ public class Account extends AbstractEntity {
         return this;
     }
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonProperty
     @JsonManagedReference
     @Remote
@@ -108,7 +111,7 @@ public class Account extends AbstractEntity {
         this.dateClosed = dateClosed;
     }
 
-    @OneToMany(mappedBy = "account", cascade=CascadeType.ALL)
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     public Set<Transaction> getTransactions() {
         return transactions;
     }

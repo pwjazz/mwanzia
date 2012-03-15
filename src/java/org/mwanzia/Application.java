@@ -1,6 +1,5 @@
 package org.mwanzia;
 
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -16,8 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.codehaus.jackson.map.util.StdDateFormat;
+import org.mwanzia.SmallPropertyUtils.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +57,16 @@ public abstract class Application {
     /**
      * Construct a new Application using its unqualified class name as the name.
      */
-    protected Application() {
+    protected Application(boolean whitelistProperties) {
         this.name = this.getClass().getSimpleName();
-        this.whitelistProperties = true;
+        this.whitelistProperties = whitelistProperties;
+    }
+
+    /**
+     * Construct a new Application using its unqualified class name as the name.
+     */
+    protected Application() {
+        this(true);
     }
 
     /**
@@ -102,23 +108,8 @@ public abstract class Application {
      * @return
      * @throws Throwable
      */
-    String invoke(String callString) throws Exception {
-        List<Interceptor> interceptors = new ArrayList<Interceptor>();
-        for (Plugin plugin : plugins) {
-            interceptors.add(plugin.buildInterceptor());
-        }
-        for (Interceptor interceptor : interceptors) {
-            interceptor.beforeInvocation();
-        }
-        Call call = JSON.deserialize(callString, Call.class);
-        Object target = call.getTarget();
-        String targetClassName = call.getTargetClass();
-        String methodName = call.getMethod();
-        List arguments = call.getArguments();
-
-        Class targetClass = targetClassName == null ? target.getClass() : this.getClass().getClassLoader()
-                .loadClass(targetClassName);
-
+    String invoke(String targetClassName, String methodName, String callString) throws Exception {
+        Class targetClass = this.getClass().getClassLoader().loadClass(targetClassName);
         Method method = null;
         for (Method candidate : targetClass.getMethods()) {
             if (candidate.getName().equals(methodName)) {
@@ -134,6 +125,17 @@ public abstract class Application {
             throw new MwanziaException(String.format("Method %1$s on type %2$s is not remotely executable",
                     methodName,
                     targetClass.getName()));
+
+        List<Interceptor> interceptors = new ArrayList<Interceptor>();
+        for (Plugin plugin : plugins) {
+            interceptors.add(plugin.buildInterceptor());
+        }
+        for (Interceptor interceptor : interceptors) {
+            interceptor.beforeInvocation(targetClass, method);
+        }
+        Call call = JSON.deserialize(callString, Call.class);
+        Object target = call.getTarget();
+        List arguments = call.getArguments();
 
         final Iterator<Plugin> pluginIterator = plugins.iterator();
         Class[] argumentTypes = method.getParameterTypes();
@@ -219,8 +221,8 @@ public abstract class Application {
     String javaScriptInstance(String servletUrl) throws Exception {
         // Instantiate application (including properties)
         Map<Object, Object> properties = new LinkedHashMap<Object, Object>();
-        for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(this.getClass())) {
-            properties.put(descriptor.getName(), descriptor.getReadMethod().invoke(this));
+        for (Property descriptor : SmallPropertyUtils.getProperties(this.getClass()).values()) {
+            properties.put(descriptor.name, descriptor.read(this));
         }
         return String.format("mwanzia._apps.%1$s = new mwanzia.%2$s('%3$s', '%4$s', %5$s);", this.name, this.getClass()
                 .getName(), name, servletUrl, JSON.serialize(properties, whitelistProperties));
@@ -253,13 +255,13 @@ public abstract class Application {
         }
         // Collect transferableProperties
         Set<String> transferableProperties = new HashSet<String>();
-        for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(clazz)) {
+        for (Property descriptor : SmallPropertyUtils.getProperties(clazz).values()) {
             if (clazz.isAnnotationPresent(Transferable.class)
-                    || (descriptor.getReadMethod() != null && descriptor.getReadMethod()
+                    || (descriptor.isReadable() && descriptor.readMethod
                             .isAnnotationPresent(Transferable.class))
-                    || (descriptor.getWriteMethod() != null && descriptor.getWriteMethod()
+                    || (descriptor.isWriteable() && descriptor.writeMethod
                             .isAnnotationPresent(Transferable.class))) {
-                transferableProperties.add(descriptor.getName());
+                transferableProperties.add(descriptor.name);
             }
         }
         writeInstanceMethods(js, clazz, instanceMethods);
@@ -361,12 +363,12 @@ public abstract class Application {
             js.write(String.format("\"%1$s\": {", type.getName())).indent().newline();
             js.write(String.format("propertyTypes: {")).indent().newline();
             boolean firstPropertyType = true;
-            for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(type)) {
+            for (Property descriptor : SmallPropertyUtils.getProperties(type).values()) {
                 if (!firstPropertyType)
                     js.write(", ").newline();
                 // exclude indexed properties
                 if (descriptor.getPropertyType() != null) {
-                    js.write(String.format("\"%1$s\": \"%2$s\"", descriptor.getName(), descriptor.getPropertyType()
+                    js.write(String.format("\"%1$s\": \"%2$s\"", descriptor.name, descriptor.getPropertyType()
                             .getName()));
                     firstPropertyType = false;
                 }
@@ -485,8 +487,8 @@ public abstract class Application {
     private Set<Class> collectTypes(Set<Class> types, Class type) {
         if (type == null || types.contains(type))
             return types;
-        for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(type)) {
-            LOGGER.debug("Collecting type descriptor for property {} on class {}", descriptor.getName(), type.getName());
+        for (Property descriptor : SmallPropertyUtils.getProperties(type).values()) {
+            LOGGER.debug("Collecting type descriptor for property {} on class {}", descriptor.name, type.getName());
             // This excludes indexed properties
             if (descriptor.getPropertyType() != null) {
                 // Add the property

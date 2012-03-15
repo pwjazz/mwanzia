@@ -1,6 +1,5 @@
 package org.mwanzia.extras.validation;
 
-import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -14,12 +13,13 @@ import net.sf.oval.configuration.annotation.Constraint;
 import net.sf.oval.constraint.AssertValid;
 import net.sf.oval.guard.Guard;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.mwanzia.Interceptor;
 import org.mwanzia.JSON;
 import org.mwanzia.MwanziaError;
 import org.mwanzia.Plugin;
 import org.mwanzia.PrettyPrinter;
+import org.mwanzia.SmallPropertyUtils;
+import org.mwanzia.SmallPropertyUtils.Property;
 
 import com.thoughtworks.paranamer.BytecodeReadingParanamer;
 import com.thoughtworks.paranamer.Paranamer;
@@ -131,15 +131,15 @@ public class ValidationPlugin extends Plugin {
                             js.write(",").newline();
                         js.write("targetValidations: {").indent().newline();
                         boolean firstChildProperty = true;
-                        for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(targetType)) {
+                        for (Property descriptor : SmallPropertyUtils.getProperties(targetType).values()) {
                             // Exclude indexed properties
                             if (descriptor.getPropertyType() != null) {
                                 List<Annotation> childValidationAnnotations = collectValidationAnnotations(descriptor
-                                        .getReadMethod().getAnnotations());
+                                        .readMethod.getAnnotations());
                                 if (childValidationAnnotations.size() > 0) {
                                     if (!firstChildProperty)
                                         js.write(",").newline();
-                                    js.write(String.format("%1$s: ", descriptor.getName()));
+                                    js.write(String.format("%1$s: ", descriptor.name));
                                     writeValidations(js, childValidationAnnotations, descriptor.getPropertyType());
                                     firstChildProperty = false;
                                 }

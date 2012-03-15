@@ -23,7 +23,7 @@ public class Interceptor {
      * 
      * @throws Exception
      */
-    public void beforeInvocation() throws Exception {
+    public void beforeInvocation(Class targetClass, Method method) throws Exception {
     }
 
     /**

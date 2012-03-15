@@ -1,9 +1,8 @@
 package org.mwanzia.extras.jpa;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.metamodel.ManagedType;
 import javax.persistence.metamodel.Type.PersistenceType;
@@ -23,7 +22,7 @@ import org.mwanzia.Interceptor;
  * 
  * @author percy
  */
-public abstract class JPA2Plugin extends AbstractJPAPlugin {
+public abstract class JPA2Plugin extends JPAPlugin {
     @Override
     public Interceptor buildInterceptor() {
         return new JPA2Interceptor();
@@ -32,48 +31,22 @@ public abstract class JPA2Plugin extends AbstractJPAPlugin {
     @Override
     public List<Class> getRemoteTypes() {
         List<Class> remoteTypes = new ArrayList<Class>(super.getRemoteTypes());
-        for (ManagedType managedType : getEntityManager().getEntityManagerFactory().getMetamodel().getManagedTypes()) {
+        for (ManagedType managedType : getManagedTypes()) {
             remoteTypes.add(managedType.getJavaType());
         }
         return remoteTypes;
     }
 
-    protected class JPA2Interceptor extends JPAInterceptor {
-        @Override
-        public Object[] prepareInvocation(Object target, Method method, Object[] arguments) throws Exception {
-            Object[] modifiedArguments = new Object[arguments.length];
-            int i = 0;
-            // Force call by reference semantics for parameters that are managed
-            // entities, unless the parameter is annotated with @ByValue
-            for (Annotation[] parameterAnnotations : method.getParameterAnnotations()) {
-                Object argument = arguments[i];
-                boolean forceByReference = !Reference.class.isAssignableFrom(argument.getClass())
-                        && isManagedEntity(argument);
-                if (forceByReference && argument != null) {
-                    for (Annotation annotation : parameterAnnotations) {
-                        if (ByValue.class.isAssignableFrom(annotation.getClass())) {
-                            // Override forced by reference behavior
-                            forceByReference = false;
-                            break;
-                        }
-                    }
-                }
-                if (forceByReference) {
-                    modifiedArguments[i] = new Reference(argument).dereference();
-                } else {
-                    modifiedArguments[i] = argument;
-                }
-                i += 1;
-            }
-            return super.prepareInvocation(target, method, modifiedArguments);
-        }
+    protected Set<ManagedType<?>> getManagedTypes() {
+        return getEntityManager().getMetamodel().getManagedTypes();
+    }
 
-        private boolean isManagedEntity(Object object) {
+    protected class JPA2Interceptor extends JPAInterceptor {
+        protected boolean isManagedEntity(Object object) {
             if (object == null)
                 return false;
             Class clazz = object.getClass();
-            for (ManagedType managedType : getEntityManager().getEntityManagerFactory().getMetamodel()
-                    .getManagedTypes()) {
+            for (ManagedType managedType : getManagedTypes()) {
                 if (PersistenceType.EMBEDDABLE != managedType.getPersistenceType()
                         && managedType.getJavaType().isAssignableFrom(clazz))
                     return true;
@@ -81,4 +54,5 @@ public abstract class JPA2Plugin extends AbstractJPAPlugin {
             return false;
         }
     }
+
 }

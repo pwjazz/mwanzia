@@ -11,5 +11,9 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="buildlibs/datanucleus-appengine-1.0.10.final.jar"/>
+	<classpathentry kind="lib" path="buildlibs/jdo2-api-2.3-eb.jar"/>
+	<classpathentry kind="lib" path="buildlibs/datanucleus-core-1.1.5.jar"/>
+	<classpathentry kind="lib" path="buildlibs/datanucleus-jpa-1.1.5.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

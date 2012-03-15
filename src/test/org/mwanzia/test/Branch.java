@@ -19,6 +19,7 @@ import org.codehaus.jackson.annotate.JsonManagedReference;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.mwanzia.Remote;
 import org.mwanzia.extras.jpa.ByValue;
+import org.mwanzia.extras.transactions.RequiresTransaction;
 import org.mwanzia.extras.validation.validators.Required;
 
 @Entity
@@ -33,6 +34,7 @@ public class Branch extends AbstractEntity {
     private Set<Account> accounts = new HashSet<Account>();
 
     @Remote
+    @RequiresTransaction
     public Account openAccount(@Required @AssertValid @ByValue Customer owner) {
         if (owner.getId() == null)
             JPA.getInstance().getEntityManager().persist(owner);

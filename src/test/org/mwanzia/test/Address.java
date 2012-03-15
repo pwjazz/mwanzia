@@ -4,6 +4,7 @@ import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 
+import net.sf.oval.constraint.Assert;
 import net.sf.oval.constraint.Length;
 
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -24,7 +25,7 @@ public class Address {
     private State state;
 
     @Required
-    @Length(min = 5, max = 5)
+    @Assert(expr = "_value.length == 5", lang = "javascript")
     private String postalCode;
 
     public Address() {

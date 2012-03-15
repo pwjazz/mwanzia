@@ -28,6 +28,7 @@
             <property name="javax.persistence.jdbc.user" value="mwanzia"/>
             <property name="javax.persistence.jdbc.password" value="mwanzia"/>
             <property name="namingStrategy" value="org.mwanzia.test.NewAndImprovedNamingStrategy" />
+            <property name="hibernate.connection.autocommit" value="false"/>
         </properties>
     </persistence-unit>
 </persistence>

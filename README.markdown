@@ -1,68 +1,20 @@
 # Mwanzia Overview
 
-NOTE - Mwanzia is still under development
+WARNING - Mwanzia is still under active development and should be considered
+beta quality at best
 
-Mwanzia provides a mechanism for seamless remote binding from JavaScript to
-server-side Java objects via an AJAX over HTTP transport. Mwanzia keeps the
-semantics on the client as similar as possible to the server-side, and in
-general aims to make programming on the client feel like you're programming on
-the server.
+Mwanzia makes your Java objects available from JavaScript so that you can access
+their data and invoke remote functions with no boilerplate code.
 
-Unlike [GWT](http://code.google.com/webtoolkit/), Mwanzia is not a UI framework.
-Consequently, the server-side Java code does not need to contain any UI-related
-logic or configuration. This makes Mwanzia suitable for binding directly from a
-JavaScript UI to a domain model without needing to create any server-side
-UI components.
-
-A primary goal for Mwanzia is to avoid turning into a leaky abstraction.  In an
-application that uses Mwanzia, you will have some objects that are exported via
-Mwanzia and some that are not.  Basically, the Mwanzia objects behave just like
-all your other objects, except that they support remoting which introduces the
-following peculiarities:
-
-+ JavaScript objects may include some asynchronous remote methods which have
-  their own calling conventions that are explained below.
-  
-+ Some Java objects have one or more remotely accessible methods identified by
-  the @Remote annotation.
-  
-+ Some Java objects can be sent to/from the client as JSON and you need to deal
-  with the usual things like handling cyclic references, Hibernate lazy loading
-  and so on.
-  
-In keeping with Mwanzia's "no leak" philosophy, the core of Mwanzia does
-remoting and nothing else.  Mwanzia does provide a plugin mechanism that allows
-it to be extended to support things like JPA, validation, authentication/
-authorization and other application-specific functionality that may be related
-to remoting but aren't strictly necessary.
-  
-If you want to dive right in, take a look at our live
-[JavaScript Tests](http://ec2-23-20-152-26.compute-1.amazonaws.com:8080/mwanzia/core_tests.html).
-
-This is a full featured Mwanzia application demonstrating use of the JPA,
-validation and Shiro authentication/authorization plugins.  Here is the corresponding
-[Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
-
-For a gentler introduction, read on.
-
-## Somewhat Contrived Example
-
-### Java Code
+##### Java Code
 
     package org.mwanzia.demo;
         
-    /**
-     * Part of the object model in our example system.
-     */
     public class Account {
         private Long id;
         private String name;
         private Date closedDate;
         
-        /**
-         * The @Remote annotation indicates that this method is callable
-         * from JavaScript.
-         */
         @Remote
         public static List<Account> list() {
            // query for your accounts as necessary
@@ -75,8 +27,6 @@ For a gentler introduction, read on.
            return this;
         }
 
-        // this annotation means that the ID will be transferred from client
-        // to server when making calls to a specific instance of the Account        
         @Transferable 
         public Long getId() {
             return id;
@@ -87,75 +37,121 @@ For a gentler introduction, read on.
         }
     } 
     
-### JavaScript Code
+##### JavaScript Code
    
-    // Import top level package names so that you can use them (e.g. org.mwanzia.demo)
-    
     mwanziaImport();            
-                
-    // Import the org.mwanzia.demo package so that we can reference Account
-    // directly, instead of using org.mwanzia.demo.Account
-    
     mwanziaImportPackage(org.mwanzia.demo);
     
-    var anAccount = null;
-    
     Account.list().success(function(accountList) {
+        var thirdAccountInList = accountList[3];
         
-        // Get the third account
-        anAccount = accountList[3];
-        
-        anAccount.close(function(updatedAccount) {
+        thirdAccountInList.close(function(updatedAccount) {
            // Update the local account
-           anAccount = updatedAccount;
+           thirdAccountInList = updatedAccount;
         }).go();
     }.go();
     
 That's it - no messing with XHR objects, URLs, query parameters, ids or any of
 the usual boilerplate!
 
-## Wait a minute, where's the plumbing?!
+## Why Choose Mwanzia?
 
-Okay, we cheated a little bit in our example, you do also have to set up some
-plumbing to get this all to work, but it's pretty minimal. You'll need to:
++ You like to write your UI in JavaScript and your back-end in Java, without
+  having to [write UI code in Java](http://code.google.com/webtoolkit/overview.html)
+  
++ You think it would be cool to call your Java methods using
+  [named parameters](http://en.wikipedia.org/wiki/Named_parameters)
+  
++ You want to deploy to a servlet container, like
+  [Tomcat](http://tomcat.apache.org/),
+  [Jetty](http://jetty.codehaus.org/jetty/), or
+  [AppEngine](http://code.google.com/appengine/docs/java/overview.html)
+  
++ Mwanzia works in a [shared nothing architecture](http://en.wikipedia.org/wiki/Shared_nothing_architecture)
 
-1. Create an Application class and register your remote objects
-2. Configure the Mwanzia Servlet in your web.xml
-3. Import some JavaScript on the client
++ Mwanzia plays nice with JPA, in particular Hibernate and DataNucleus on AppEngine
 
-### Application Class
++ Mwanzia is an [API](http://en.wikipedia.org/wiki/Api), not a
+  [framework](http://en.wikipedia.org/wiki/Web_application_framework)
+  
++ Mwanzia has minimal external dependencies to keep you out of jar hell
 
-In order to use Mwanzia, you create a sub-class of org.mwanzia.Application.
-Inside the constructor, you register classes for remote access using the
-method registerRemote().
++ It's modular - use existing plugins and/or add your own to achieve tight
+  integration with your app
+  
++ Mwanzia is licensed under the liberal
+  [MIT License](http://en.wikipedia.org/wiki/Mit_license) so that you can use it
+  in open and closed-source projects
+  
+## Less Leak Philosophy
 
-    package org.mwanzia.demo;
-    
-    public class DemoApplication extends org.mwanzia.Application {
-        public DemoApplication() {
-            super();
-            // Register Account as a remoteable class in this Application
-            registerRemote(Account.class);
-        }
-    }
+Mwanzia does its best to stay out of the developer's way.  Because Mwanzia is
+fundamentally a JSON over AJAX mechanism, developers do need to be aware of a
+handful of unavoidable peculiarities.
 
-### web.xml
++ Remote methods on JavaScript objects are asynchronous, so they have special
+  calling conventions.
+  
++ Methods on Java objects that have been marked as @Remote are remotely callable
+  from JavaScript and should be treated with the same respect as any API.
+  
++ Any Java objects that are sent to/from the client as JSON require the
+  developer to manage the usual things like handling cyclic references,
+  Hibernate lazy loading and so on.  Mwanzia uses the popular 
+  [Jackson JSON processer](http://jackson.codehaus.org/), which provides
+  excellent support for dealing with
+  [cyclic references](http://wiki.fasterxml.com/JacksonFeatureBiDirReferences).
+  Mwanzia beefs up this support by automatically resolving back-references on
+  the client so that you end up with a complete object graph.  Mwanzia's 
+  Hibernate JPA Plugin also deals with lazy loading, so for most scenarios
+  developers don't have much to worry about.
 
-    <servlet>
-        <servlet-name>Mwanzia</servlet-name>
-        <servlet-class>org.mwanzia.MwanziaServlet</servlet-class>
-        <init-param>
-            <!-- TODO - add support for multiple applications -->
-            <param-name>application</param-name>
-            <param-value>org.mwanzia.test.TestApplication</param-value>
-        </init-param>
-        <load-on-startup />
-    </servlet>
++ Depending on which plugins are used, there may be other peculiarities.
 
-    <servlet-mapping>
-        <servlet-name>Mwanzia</servlet-name>
-        <url-pattern>/server.js</url-pattern>
-    </servlet-mapping>
+In our opinion, Mwanzia solves many remoting-related problems without 
+introducing any significant new ones.
+
+## A Look Under the Covers of Our Example
+
+![Example Sequence Diagram](https://github.com/pwjazz/mwanzia/raw/master/docs/img/example_sequence_diagram.png)
+
+1. When you include server.js on your page, it imports dynamically created
+   JavaScript that defines the client-side version of your object model.  A look
+   at this file will explain much about the magic that happens on the client-side.
+   This file is also useful for auditing what has been exposed from your system
+   via Mwanzia.
+
+2. When you call a remote method like list() in the browser, the JavaScript
+   object dispatches this to the server via the MwanziaServlet.  In the case of
+   a static method like list(), MwanziaServlet simply invokes the static method
+   on the server and then returns the result to the client.
+   
+3. In addition to calling static methods, you may also call instance methods
+   like close(). When you do this, MwanziaServlet will first instantiate an
+   instance of the appropriate type, and then set all properties marked as
+   @Transferable (in this case, the property "id").  Then it calls the method.
+   
+Note - JSON is handled on the server using [Jackson](http://jackson.codehaus.org/).
+  
+## In-Browser Unit Tests
+
+If you want to dive right in to the gory details, take a look at our live
+[JavaScript Tests](http://ec2-23-20-152-26.compute-1.amazonaws.com:8080/mwanzia/core_tests.html).
+
+This is a full featured Mwanzia application demonstrating use of the JPA,
+validation and Shiro authentication/authorization plugins.  Here is the corresponding
+[Java Back-end Code](https://github.com/pwjazz/mwanzia/tree/master/src/test).
+
+For a gentler introduction, read on.
+
+## Basic Setup
+
+To use Mwanzia, you'll need to:
+
+1. Add server-side jar dependencies to build path
+2. Create an Application class and register your remote objects
+3. Configure the Mwanzia Servlet in your web.xml
+4. Import some JavaScript on the client
 
 ### Server-Side Dependencies
 
@@ -191,11 +187,6 @@ method registerRemote().
         <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/slf4j-api-1.6.1.jar">slf4j-api-1.6.1.jar</a></td>
     </tr>
     <tr>
-        <td>Core</td>
-        <td><a href="http://commons.apache.org/beanutils/">Commons BeanUtils</a></td>
-        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-beanutils-core-1.8.3.jar">commons-beanutils-core-1.8.3.jar</a></td>
-    </tr>
-    <tr>
         <td>JPA Plugin</td>
         <td>JPA 2.0 API</td>
         <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/hibernate-jpa-2.0-api-1.0.0.Final.jar">hibernate-jpa-2.0-api-1.0.0.Final.jar</a></td>
@@ -205,11 +196,71 @@ method registerRemote().
         <td><a href="http://oval.sourceforge.net">OVal</a></td>
         <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/oval-1.61.jar">oval-1.61.jar</a></td>
     </tr>
+    <tr>
+        <td>Validation Plugin (if using JavaScript Expressions)</td>
+        <td><a href="http://www.mozilla.org/rhino/">Rhino</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/js.jar">js.jar</a></td>
+    </tr>
+    <tr>
+        <td>Shiro Plugin</td>
+        <td><a href="http://shiro.apache.org/">Apache Shiro</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/shiro-all-1.0.0-incubating.jar">shiro-all-1.0.0-incubating.jar</a></td>
+    </tr>
+    <tr>
+        <td>Shiro Plugin</td>
+        <td><a href="http://commons.apache.org/beanutils/">Commons BeanUtils</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-beanutils-core-1.8.3.jar">commons-beanutils-core-1.8.3.jar</a></td>
+    </tr>
+    <tr>
+        <td>Shiro Plugin</td>
+        <td><a href="http://commons.apache.org/collections/">Commons Collections</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-collections-3.1.jar">commons-collections-3.1.jar</a></td>
+    </tr>
+    <tr>
+        <td>Shiro Plugin</td>
+        <td><a href="http://commons.apache.org/logging/">Commons Logging</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/commons-logging-1.1.1.jar">commons-logging-1.1.1.jar</a></td>
+    </tr>
 </table>
+
+### Application Class
+
+In order to use Mwanzia, you create a sub-class of org.mwanzia.Application.
+Inside the constructor, you register classes for remote access using the
+method registerRemote().
+
+    package org.mwanzia.demo;
+    
+    public class DemoApplication extends org.mwanzia.Application {
+        public DemoApplication() {
+            super();
+            // Register Account as a remoteable class in this Application
+            registerRemote(Account.class);
+        }
+    }
+
+### web.xml
+
+    <servlet>
+        <servlet-name>Mwanzia</servlet-name>
+        <servlet-class>org.mwanzia.MwanziaServlet</servlet-class>
+        <init-param>
+            <!-- TODO - add support for multiple applications -->
+            <param-name>application</param-name>
+            <param-value>org.mwanzia.test.TestApplication</param-value>
+        </init-param>
+        <load-on-startup />
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Mwanzia</servlet-name>
+        <url-pattern>/server.js</url-pattern>
+    </servlet-mapping>
 
 ### Client-Side Dependencies
 
-Mwanzia has a number of JavaScript dependencies.
+Mwanzia has a number of JavaScript dependencies.  You can get these from the
+[test application](https://github.com/pwjazz/mwanzia/tree/master/WebContent/js).
 
     <!-- Required JavaScript Libraries -->
     <script type="text/javascript" src="js/console.js"></script>
@@ -250,29 +301,12 @@ Mwanzia has a number of JavaScript dependencies.
 + *server.js* - This is where the magic happens.  server.js is dynamically
                 generated by the MwanziaServlet and sets up your client-side
                 object model for all remotely accessible server-side classes.
+                
+                For performance reasons, this file is usually only generated
+                once and then cached in memory.  You can use the following system
+                property to have the file regenerate automatically during
+                development.  -Dmwanzia.mode=dev                
     
-### What Goes On Under the Covers
-
-![Example Sequence Diagram](https://github.com/pwjazz/mwanzia/raw/master/docs/img/example_sequence_diagram.png)
-
-1. When you include server.js on your page, it imports dynamically created
-   JavaScript that defines the client-side version of your object model.  A look
-   at this file will explain much about the magic that happens on the client-side.
-   This file is also useful for auditing what has been exposed from your system
-   via Mwanzia.
-
-2. When you call a remote method like list() in the browser, the JavaScript
-   object dispatches this to the server via the MwanziaServlet.  In the case of
-   a static method like list(), MwanziaServlet simply invokes the static method
-   on the server and then returns the result to the client.
-   
-3. In addition to calling static methods, you may also call instance methods
-   like close(). When you do this, MwanziaServlet will first instantiate an
-   instance of the appropriate type, and then set all properties marked as
-   @Transferable (in this case, the property "id").  Then it calls the method.
-   
-Note - JSON is handled on the server using [Jackson](http://jackson.codehaus.org/).
-
 ## Core Functionality
 
 Mwanzia exports Java object models to JavaScript and makes certain methods
@@ -320,6 +354,7 @@ JavaScript properties.  Derived properties are also available.
 
 Properties are only available if the object was read from the server.
 
+
 ##### Java
 
     public class MyClass {
@@ -356,6 +391,35 @@ Properties are only available if the object was read from the server.
     typeof(new MyClass().instanceProp) == "undefined";
     
     typeof(new MyClass().derivedProp) == "undefined";
+    
+### Application Config
+
+On the client, your Application class is availabe under its own name.  Any
+properties that you defined on your application are available in the client.
+This is handy for static configuration data.
+
+Note - these properties are not static.  The client gets an instance of your
+Application.
+
+##### Java
+
+    package org.mwanzia.demo;
+    
+    public class TestApplication {
+    
+        public String[] getStates() {
+            return new String[] {"AL", "AK", ... };
+        }
+        
+    }
+
+##### JavaScript
+
+    importMwanzia();
+    
+    // The below is true
+    
+    TestApplication.states.length > 0
     
 ### Remote Methods
 
@@ -536,7 +600,7 @@ associative array.
         returnValue == "I spoke loudly";
     }).go();
     
-### Exception Handling
+### Exception and Error Handling
 
 Mwanzia allows clients to handle exceptions from remote methods using a similar
 syntax as Java.  Exceptions are typed and polymorphic, for maximum compatibility
@@ -544,7 +608,8 @@ with the patterns you're accustomed to in Java.
 
 To handle an exception, use the catchException() method on a remote invocation
 and pass in an associative array of exception types and handler functions.
-catchException also accepts a default handler that will handle any exception.
+catchException also accepts a default handler that will handle any exception
+that wasn't specifically handled.
 
 ##### Java
 
@@ -580,6 +645,22 @@ catchException also accepts a default handler that will handle any exception.
         // type
         alert("Caught unexpected exception with message: " + exception.message);
     });
+    
+#### Default Handlers
+
+configure() allows you to register default handlers for exceptions (throw from
+server) and errors (problems arising on JavaScript side, for example network
+down).
+
+##### JavaScript
+
+    mwanzia.configure(function(exception){
+        console.error("Unexpected exception", exception);
+        throw fail("Unexpected exception: " + mwanzia.stringify(exception));
+    }, function(error){
+        console.error("Unexpected error", error);
+        throw fail("Unexpected error: " + error);
+    });
 
 ### Passing Parameters
 
@@ -590,6 +671,9 @@ reference types.
 + BigDecimals are treated as floating point numbers on the client.
 + Dates receive special handling.  They are serialized using an ISO8601 format
   and automatically converted to/from timezone-adjusted dates on the client.
++ JavaScript arrays convert to/from Collections and Arrays on the server
+  (depending on your method signature)
++ Java Maps convert to/from JavaScript associative arrays
 + Reference types are passed by value, which is to say that on the server, they
   reflect whatever data was passed in by the client.  Data can be nested to
   any depth, however if your input data contains cyclic graphs, you'll need to
@@ -704,7 +788,7 @@ it includes a few plugins to support common usage patterns.
 
 ### JPA Support
 
-note - requires JPA2 or Hibernate
+note - requires JPA2, Hibernate or DataNucleus on AppEngine
 
 Mwanzia is particularly well suited to binding from JavaScript to a persistent
 server-side domain model.  In fact, this is the scenario for which Mwanzia
@@ -713,6 +797,14 @@ was originally authored.  The JPA plugin supports this patterns.
 The JPA plugin is framework agnostic - you provide the hook for obtaining an
 EntityManager from your own environment.  The only requirement is that you use
 only 1 EntityManager per thread.
+
+For vanilla JPA2, use JPA2Plugin.
+
+For Hibernate on JPA1, use HibernateJPA1Plugin.
+
+For Hibernate on JPA2, use HibernateJPA2Plugin.
+
+For App Engine, using AppEngineJPAPlugin.
  
 The JPA plugin provides several key features:
 
@@ -791,9 +883,14 @@ All persistent types are automatically exported to the client and eligible for
 remote access.  Individual methods still need to be marked as @Remote to allow
 remote invocation.
 
-#### Automatic Handling for Lazy Loading
+#### Automatic Handling for Lazy Loading (Hibernate Only)
 
-TODO
+Lazy loaded single and multi-ended associations are handled transparently by
+Mwanzia.  On the client, objects appear with nothing but their id.  Multi-ended
+associations appear as arrays of objects with only ids.
+
+Thus, you can still check for null/not null, and you have an id to use when
+calling back to the server.
 
 #### Remote Lazy Loading (Hibernate Only)
 
@@ -844,25 +941,120 @@ Just mark your getter method with @Remote to enable this.
     // Now we clear the cached value
     owner.getRelated().clear();
 
-#### Configuration
-
-TODO:
-
 ### Transaction Plugin
 
-This plugin automatically starts and stops transactions on every remote invocation.
-It works very nicely in coordination with the JPA plugin.
+This plugin automatically starts and stops transactions.  You can enable
+transactions for classes or methods using the @RequiresTransaction annotation.
+
+The plugin knows nothing about specific transaction frameworks, it just requires
+that you implement some abstract methods to plug into your platform.  Here's an
+example from a JPA application:
+
+    public TestApplication() {
+        super();
+        // Register a plugin for doing transaction management
+        registerPlugin(new TransactionPlugin<EntityTransaction>() {
+            @Override
+            protected EntityTransaction beginTransaction() {
+                JPA.getInstance().clear();
+                EntityTransaction transaction = JPA.getInstance().getEntityManager().getTransaction();
+                transaction.begin();
+                return transaction;
+            }
+
+            @Override
+            protected void commit(EntityTransaction transaction) throws Exception {
+                transaction.commit();
+            }
+
+            @Override
+            protected void rollback(EntityTransaction transaction) throws Exception {
+                transaction.rollback();
+            }
+        });
+        registerPlugin(new HibernateJPA2Plugin() {
+            @Override
+            protected EntityManager getEntityManager() {
+                return JPA.getInstance().getEntityManager();
+            }
+        });
+        registerPlugin(new ValidationPlugin());
+        registerPlugin(new ShiroPlugin(this));
+    }
 
 ### Validation Plugin
 
 This plugin supports declarative validation constraints using [OVal](http://oval.sourceforge.net/).
 
-Constraint violations generate ValidationExceptions.  Built-in basic constraints
-like required, length, etc can be validated both on the client and on the server.
+The plugin provides a validate() method on all remote invocations on the client,
+allowing your JavaScript application to validate a call before submitting it.
+The validate() method is also automatically invoked before submitting the call
+to the server.
+
+Even though constraints are only validated on method calls, the can be defined
+both on entities and on methods.
+
+Constraint violations generate ValidationExceptions.  ValidationException
+includes a list of ValidationErrors that provide details about what fields
+failed to validate and why.
+
+Built-in basic constraints like required, length, etc can be validated both on
+the client and on the server, whereas more complicated constraints may only be
+checked on the server-side.
 
 Client-side validation failures throw exactly the same exception as server-side
 failures, providing a unified programming model for validation.
 
+If you include Rhino on your classpath, you can use OVal's Assert
+with JavaScript.  The validation plugin will run this same statement on the
+client when you validate there.
+
+##### Java
+
+    public class Address {
+        public void save(@Required Date when) {
+            // save this address
+        }
+    
+        @Transferable
+        @Assert(expr = "_value.length == 5", lang = "javascript")
+        private String postalCode;
+    
+        // Because this is a Java expression, it can only be checked on the server
+        @Assert(expr = "_value == true", lang = "java")
+        private boolean aBoolean;
+    }
+        
+##### JavaScript
+
+    var address = new Address({postalCode: "123456", aBoolean: false});
+    
+    try {
+        address.save(new Date()).validate();
+    } catch (error) {
+        // This should be true
+        error instanceof org.mwanzia.extras.ValidationException;
+    }
+    
+    // Fix the postalCode but omit the date
+    address.postalCode = "12345";
+    // This time, we won't call validate ourselves and just submit
+    address.save().catchException({
+        "org.mwanzia.extras.ValidationException": function() {
+            // we should end up here
+            // this call never actually went to the server
+        }
+    });
+    
+    // Now include a date, but aBoolean is bad
+    address.save(new Date()).catchException({
+        "org.mwanzia.extras.ValidationException": function() {
+            // we should end up here
+            // this call went to the server, but we get the exact same
+            // type of exception
+        }
+    });
+    
 ### Shiro Plugin
 
 Using [Apache Shiro](http://shiro.apache.org/), this plugin provides the ability

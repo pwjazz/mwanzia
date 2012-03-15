@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class Mwanzia {
-	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMwanzia.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Mwanzia.class);
 
 	private static String s_javascript;
 
@@ -41,10 +41,10 @@ public class Mwanzia {
 		return js.toString();
 	}
 
-	public String call(String applicationName, String callString)
+	public String call(String applicationName, String targetClass, String methodName, String callString)
 			throws Exception {
 	    try {
-            return applications.get(applicationName).invoke(callString);
+            return applications.get(applicationName).invoke(targetClass, methodName, callString);
         } catch (Exception e) {
             LOGGER.error(String.format("Unable to call application %1$s : %2$s", applicationName, e.getMessage()), e);
             throw e;

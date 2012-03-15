@@ -38,9 +38,9 @@ public class ShiroPlugin extends Plugin {
     public Interceptor buildInterceptor() {
         return new Interceptor() {
             @Override
-            public void beforeInvocation() throws Exception {
+            public void beforeInvocation(Class targetClass, Method method) throws Exception {
                 MwanziaShiroRealm.setApplication(application);
-                super.beforeInvocation();
+                super.beforeInvocation(targetClass, method);
             }
 
             @Override

@@ -29,7 +29,7 @@ mwanzia.AjaxInvocation.prototype.validate = function(call) {
 		var validations = parameterInfo.validations;
 		console.debug("Validating parameter " + name + " with info", parameterInfo)
 		if (typeof(validations) != "undefined") {
-			validationContext.validate(name, argument, validations);
+			validationContext.validate(call.target, name, argument, validations);
 		}
 	}
 	if (validationContext.errors.length > 0)
@@ -55,11 +55,12 @@ mwanzia.AjaxInvocation.prototype._doInvoke = function() {
 };
 
 mwanzia.ValidationContext = Class.extend({
-	init: function() {
-		this.errors = [];
+	init: function(target) {
+	    this.target = target;
+        this.errors = [];
 	},
 	
-	validate: function(fieldName, value, validations) {
+	validate: function(object, fieldName, value, validations) {
 		for (validationType in validations) {
 			console.debug("Validating parameter " + fieldName + " for " + validationType);
 			var validator = mwanzia._getValidator(validationType);
@@ -76,7 +77,7 @@ mwanzia.ValidationContext = Class.extend({
 					messageVariables: messageVariables
 				}));
 			}
-			validator(this, validationConfig, name, value, errorReporter);
+			validator(this, object, validationConfig, name, value, errorReporter);
 		}
 	}
 });
@@ -93,25 +94,25 @@ mwanzia._getValidator = function(validationType) {
 mwanzia._noopValidator = function() {};
 
 mwanzia._validators = {
-	Required: function(validationContext, config, fieldName, value, errorReporter) {
+	Required: function(validationContext, object, config, fieldName, value, errorReporter) {
 		if (typeof(value) == "undefined" || value == null || (typeof(value) == "string" && value.length == 0)) {
 			errorReporter();
 		}
 	},
 	
-	NotNull: function(validationContext, config, fieldName, value, errorReporter) {
+	NotNull: function(validationContext, object, config, fieldName, value, errorReporter) {
 		if (typeof(value) == "undefined" || value == null) {
 			errorReporter();
 		}
 	},
 	
-	NotEmpty: function(validationContext, config, fieldName, value, errorReporter) {
+	NotEmpty: function(validationContext, object, config, fieldName, value, errorReporter) {
 		if (typeof(value) == "string" && value.length == 0) {
 			errorReporter();
 		}
 	},
 	
-	Length: function(validationContext, config, fieldName, value, errorReporter) {
+	Length: function(validationContext, object, config, fieldName, value, errorReporter) {
 		if (typeof(value) == "string" && value != null) {
 			console.debug(value.length);
 			if (config.min && value.length < config.min) {
@@ -123,12 +124,19 @@ mwanzia._validators = {
 		}
 	},
 	
-	AssertValid: function(validationContext, config, fieldName, value, errorReporter) {
+	AssertValid: function(validationContext, object, config, fieldName, value, errorReporter) {
 		for (subField in config.targetValidations) {
 			var subValue = value[subField];
 			var compositeName = fieldName + "." + subField;
 			var validations = config.targetValidations[subField];
-			validationContext.validate(compositeName, subValue, validations);
+			validationContext.validate(value, compositeName, subValue, validations);
 		}
+	},
+	
+	Assert: function(validationContext, object, config, fieldName, value, errorReporter) {
+	    var func = new Function("_this", "_value", "return " + config.expr);
+	    if (!func(object, value)) {
+	    	errorReporter();
+	    }
 	}
 };

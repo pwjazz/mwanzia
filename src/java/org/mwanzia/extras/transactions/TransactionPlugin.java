@@ -1,5 +1,7 @@
 package org.mwanzia.extras.transactions;
 
+import java.lang.reflect.Method;
+
 import org.mwanzia.Interceptor;
 import org.mwanzia.Plugin;
 
@@ -19,14 +21,26 @@ public abstract class TransactionPlugin<T> extends Plugin {
 
         return new Interceptor() {
             @Override
-            public void beforeInvocation() throws Exception {
-                CURRENT_TRANSACTION.set((T) beginTransaction());
+            public void beforeInvocation(Class targetClass, Method method) throws Exception {
+                if (requiresTransaction(method, method.getDeclaringClass())) {
+                   CURRENT_TRANSACTION.set((T) beginTransaction());
+                }
+                super.beforeInvocation(targetClass, method);
+            }
+            
+            @Override
+            public Object[] prepareInvocation(Object target, Method method, Object[] arguments) throws Exception {
+                
+                return super.prepareInvocation(target, method, arguments);
             }
 
             @Override
             public void invocationSucceeded(Object target, Object result) throws Exception {
                 try {
-                    commit((T) CURRENT_TRANSACTION.get());
+                    T currentTransaction = (T) CURRENT_TRANSACTION.get();
+                    if (currentTransaction != null) {
+                        commit(currentTransaction);
+                    }
                 } finally {
                     CURRENT_TRANSACTION.set(null);
                 }
@@ -34,11 +48,25 @@ public abstract class TransactionPlugin<T> extends Plugin {
 
             public Throwable invocationFailed(Throwable exception) throws Exception {
                 try {
-                    rollback((T) CURRENT_TRANSACTION.get());
+                    T currentTransaction = (T) CURRENT_TRANSACTION.get();
+                    if (currentTransaction != null) {
+                        rollback((T) CURRENT_TRANSACTION.get());
+                    }
                     return exception;
                 } finally {
                     CURRENT_TRANSACTION.set(null);
                 }
+            }
+
+            private boolean requiresTransaction(Method method, Class clazz) {
+                boolean methodRequiresTransaction = method.isAnnotationPresent(RequiresTransaction.class);
+                boolean classRequiresTransaction = clazz.isAnnotationPresent(RequiresTransaction.class);
+                if (methodRequiresTransaction || classRequiresTransaction)
+                    return true;
+                Class superclass = clazz.getSuperclass();
+                if (superclass != null)
+                    return requiresTransaction(method, superclass);
+                return false;
             }
         };
     }

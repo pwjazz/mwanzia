@@ -41,10 +41,10 @@ public class DefaultMwanzia extends Mwanzia {
 		return js.toString();
 	}
 
-	public String call(String applicationName, String callString)
+	public String call(String applicationName, String targetClass, String methodName, String callString)
 			throws Exception {
 		try {
-		    return applications.get(applicationName).invoke(callString);
+		    return applications.get(applicationName).invoke(targetClass, methodName, callString);
 		} catch (Exception e) {
             LOGGER.error(String.format("Unable to make call to application %1s: %2$s", applicationName, e.getMessage()),
                     e);

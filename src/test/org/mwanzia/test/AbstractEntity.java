@@ -14,7 +14,7 @@ import org.mwanzia.Transferable;
 /**
  * <p>
  * Abstract base class for entities that are identified by a numeric ID and are
- * versioned for optimistics locking.
+ * versioned for optimistic locking.
  * </p>
  * 
  * @author percy wegmann ( percy <at> karen and percy <dot> net )
