@@ -354,7 +354,6 @@ JavaScript properties.  Derived properties are also available.
 
 Properties are only available if the object was read from the server.
 
-
 ##### Java
 
     public class MyClass {
@@ -391,6 +390,44 @@ Properties are only available if the object was read from the server.
     typeof(new MyClass().instanceProp) == "undefined";
     
     typeof(new MyClass().derivedProp) == "undefined";
+    
+### Cyclic References
+
+With Mwanzia, use the standard Jackson annotations @JsonIgnore,
+@JsonManagedReference and @JsonBackReference to deal with pruning your
+object graph on return to the client.
+
+When using the JPA plugin, f you use @JsonManagedReference and
+@JsonBackReference for persistent entities, Mwanzia will do its best to
+reconstruct your object graph on the client.
+
+##### Java Code
+
+    public class Owner {
+        
+        @JsonManagedReference
+        public Owned getOwned() {};
+        
+        public static Owner find() {};
+    }
+    
+    public class Owned {
+        
+        @JsonBackReference
+        public Owner getOwner() {};
+        
+    }
+    
+##### JavaScript Code
+
+    Owner.find().success(function(foundOwner) {
+        // All of these are true
+        foundOwner.owned != null
+        
+        foundOwner.owned.owner != null;
+        
+        foundOwner.owned.owner == foundOwner;
+    }).go();
     
 ### Application Config
 
