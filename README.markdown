@@ -397,7 +397,7 @@ With Mwanzia, use the standard Jackson annotations @JsonIgnore,
 @JsonManagedReference and @JsonBackReference to deal with pruning your
 object graph on return to the client.
 
-When using the JPA plugin, f you use @JsonManagedReference and
+When using the JPA plugin, if you use @JsonManagedReference and
 @JsonBackReference for persistent entities, Mwanzia will do its best to
 reconstruct your object graph on the client.
 
@@ -928,17 +928,6 @@ associations appear as arrays of objects with only ids.
 
 Thus, you can still check for null/not null, and you have an id to use when
 calling back to the server.
-
-#### Remote Lazy Loading (Hibernate Only)
-
-To handle lazy-loaded associations, the plugin supports remote lazy loading.
-The first time that you use the accessor method for a lazy-loaded property
-in JavaScript, Mwanzia will make a remote call.  On subsequent reads, Mwanzia
-will use the already loaded value.
-
-To clear locally cached values, call clear() on the remote invocation.
-
-Just mark your getter method with @Remote to enable this.
 
 ##### Java
 
