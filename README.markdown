@@ -264,7 +264,7 @@ Mwanzia has a number of JavaScript dependencies.  You can get these from the
 
     <!-- Required JavaScript Libraries -->
     <script type="text/javascript" src="js/console.js"></script>
-    <script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="js/json2.js"></script>
     <script type="text/javascript" src="js/typesystem.js"></script>
     <script type="text/javascript" src="js/mwanzia.core.js"></script>
@@ -279,8 +279,9 @@ Mwanzia has a number of JavaScript dependencies.  You can get these from the
                  Include console.js to provide compatibility with browsers that
                  don't have a console of their own.
                  
-+ *jquery-1.4.2.min.js* - Mwanzia uses jQuery's ajax support.  Feel free to use
-                           your own version of jQuery.
++ *jquery-1.7.1.min.js* - Mwanzia uses jQuery's ajax support.  Feel free to use
+                          any version of jQuery as of 1.4 (may even work with
+                          earlier versions).
                            
 + *json2.js* - Mwanzia uses this library for parsing and serialization JSON
                instead of the browser's built-in JSON parser.
@@ -966,7 +967,53 @@ calling back to the server.
     
     // Now we clear the cached value
     owner.getRelated().clear();
+    
+#### Remote Lazy Loading (Hibernate Only)
 
+To handle lazy-loaded associations, the plugin supports remote lazy loading.
+After reading a property once, Mwanzia will use a locally cached value.
+
+To clear locally cached values and force a remote fetch, call forceRemote() on
+the remote invocation before you continue.  forceRemote() is chainable.
+
+Just mark your getter method with @Remote to enable this.
+
+##### Java
+
+    public class Related {
+    
+    }
+    
+    public class Owner {
+        private Related related;
+        
+        @ManyToOne(fetch = FetchType.LAZY)
+        @Remote
+        public Related getRelated() {
+            return related;
+        }
+    }
+    
+##### JavaScript
+
+    var owner = // get owner somehow;
+    
+    var related = null;
+    
+    // The first time, force a remote load
+    owner.getRelated().forceRemote().success(function(_related) {
+        // This first time makes a remote call
+        related = _related;
+    });
+    
+    owner.getRelated().success(function(_related) {
+        // This time we're getting a cached value
+        related = _related;
+    });
+    
+    // We can also access the property directly now
+    related = owner.related;
+    
 ### Transaction Plugin
 
 This plugin automatically starts and stops transactions.  You can enable

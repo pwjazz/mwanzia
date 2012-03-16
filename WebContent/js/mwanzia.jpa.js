@@ -62,9 +62,9 @@ mwanzia.LazyAjaxInvocation = mwanzia.AjaxInvocation.extend({
         return this;
     },
     
-    clear: function(callback){
+    forceRemote: function(){
         this._originalTarget[this._propertyName] = null;
-        return this.success(callback);
+        return this;
     },
     
     go: function(){

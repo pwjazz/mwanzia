@@ -8,7 +8,7 @@
         <script type="text/javascript">
             console.clear();
         </script>
-        <script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
         <script type="text/javascript" src="js/json2.js"></script>
         <script type="text/javascript" src="js/typesystem.js"></script>
         <script type="text/javascript" src="js/mwanzia.core.js"></script>
@@ -131,9 +131,10 @@
                                                                 assertTrue("Account has owner", account.owner != null);
                                                                 var invocation = account.getOwner();
                                                                 assertTrue("getOwner() is a LazyAjaxInvocation", invocation instanceof mwanzia.LazyAjaxInvocation);
-                                                                invocation.success(function(owner){
-                                                                    assertNotEmpty("Account number not empty", account.number);
+                                                                invocation.forceRemote().success(function(owner){
+                                                                	assertNotEmpty("Account number not empty", account.number);
                                                                     assertTrue("Account now has owner", account.owner != null);
+                                                                    assertEquals("Account owner matches returned owner", account.owner, owner);
                                                                     assertEquals("Account owner name", "Percy Wegmann", account.owner.firstName + " " + account.owner.lastName);
                                                                     assertEquals("Account ssn undefined", "undefined", typeof(account.owner.ssn));
                                                                     assertEquals("Account balance is zero", 0, account.balance);
