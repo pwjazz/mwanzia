@@ -97,9 +97,9 @@ handful of unavoidable peculiarities.
   
 + Any Java objects that are sent to/from the client as JSON require the
   developer to manage the usual things like handling cyclic references,
-  Hibernate lazy loading and so on.  The Hibernate JPA Plugin provides a
-  @JsonReference annotation that makes this very easy, so for most scenarios
-  developers don't need to worry about this.
+  Hibernate lazy loading and so on.  The Hibernate JPA Plugin automaticaly
+  handles cyclic references using pass-by-reference semantaics, so for many
+  scenarios developers don't need to worry about it.
 
 + Depending on which plugins are used, there may be other peculiarities.
 
@@ -384,15 +384,13 @@ Properties are only available if the object was read from the server.
 ### Cyclic References
 
 With Mwanzia, use the annotation @JsonExclude to deal with pruning your
-object graph on return to the client.  If using the JPA Plugin, you can use the
-@JsonReference for more sophisticated handling of back-references (see JPA
-Plugin section below).
+object graph on return to the client.  When dealing with JPA entities you don't 
+need to worry about this (see JPA Plugin section below).
 
 ##### Java Code
 
     public class Owner {
         
-        @JsonManagedReference
         public Owned getOwned() {};
         
         public static Owner find() {};
@@ -400,7 +398,7 @@ Plugin section below).
     
     public class Owned {
         
-        @JsonBackReference
+        @JsonExclude
         public Owner getOwner() {};
         
     }
@@ -411,9 +409,7 @@ Plugin section below).
         // All of these are true
         foundOwner.owned != null
         
-        foundOwner.owned.owner != null;
-        
-        foundOwner.owned.owner == foundOwner;
+        foundOwner.owned.owner == null;
     }).go();
     
 ### Application Config
@@ -911,13 +907,11 @@ remote invocation.
 
 In the commonly used bi-directional mapping, the object graph ends up with
 cyclic references.  JSON has no way of representing these, but Mwanzia adds its
-own mechanism for handling them.  Mwanzia allows certain values to be passed
-back to the client by reference.  When this happens, Mwanzia will automatically
-replace the reference with the full object if and only if that object was sent
-back as part of that same response.
-
-To return a property by reference, mark the getter method with the annotation
-@JsonReference.
+own mechanism for handling them.  When serializing an object graph to the
+client, Mwanzia automatically replaces cyclicly referenced objects with a
+placeholder Reference.  On the client-side, these place-holder references are
+replaced by the actual object so that the graph is reconstituted as it appeared
+on the server.
 
 ##### Java Code
 
@@ -926,7 +920,6 @@ To return a property by reference, mark the getter method with the annotation
         private Parent parent;
         
         @ManyToOne
-        @JsonReference
         public Parent getParent() {
             return parent;
         }    
