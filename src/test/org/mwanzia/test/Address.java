@@ -7,7 +7,7 @@ import javax.persistence.Enumerated;
 import net.sf.oval.constraint.Assert;
 import net.sf.oval.constraint.Length;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.extras.validation.validators.Required;
 
 @Embeddable
@@ -40,7 +40,7 @@ public class Address {
         this.postalCode = postalCode;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getLine1() {
         return line1;
     }
@@ -49,7 +49,7 @@ public class Address {
         this.line1 = line1;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getLine2() {
         return line2;
     }
@@ -58,7 +58,7 @@ public class Address {
         this.line2 = line2;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getCity() {
         return city;
     }
@@ -67,7 +67,7 @@ public class Address {
         this.city = city;
     }
 
-    @JsonProperty
+    @JsonInclude
     @Enumerated(EnumType.STRING)
     public State getState() {
         return state;
@@ -77,7 +77,7 @@ public class Address {
         this.state = state;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getPostalCode() {
         return postalCode;
     }

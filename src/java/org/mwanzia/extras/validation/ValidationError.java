@@ -7,8 +7,6 @@ import net.sf.oval.ConstraintViolation;
 import net.sf.oval.context.MethodParameterContext;
 import net.sf.oval.context.OValContext;
 
-import org.codehaus.jackson.annotate.JsonProperty;
-
 public class ValidationError {
     private String fieldName;
     private String errorCode;
@@ -22,22 +20,18 @@ public class ValidationError {
         this.messageVariables = violation.getMessageVariables();
     }
 
-    @JsonProperty
     public String getFieldName() {
         return fieldName;
     }
 
-    @JsonProperty
     public String getMessage() {
         return message;
     }
 
-    @JsonProperty
     public String getErrorCode() {
         return errorCode;
     }
 
-    @JsonProperty
     public Map<String, ? extends Serializable> getMessageVariables() {
         return messageVariables;
     }

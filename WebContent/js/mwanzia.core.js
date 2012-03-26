@@ -385,6 +385,7 @@ mwanzia.Application = mwanzia.RemoteObject.extend({
     
     _invokeRemote: function(call, result){
         console.debug("Making AJAX call");
+        var app = this;
         jQuery.ajax({
             url: this._remoteUrl,
             type: 'POST',
@@ -396,7 +397,8 @@ mwanzia.Application = mwanzia.RemoteObject.extend({
                 call: mwanzia.stringify(call)
             },
             success: function(data, textStatus, xhr){
-				data = JSON.parse(data, mwanzia.jsonReviver);
+                console.error(data);
+				data = app._parseResponse(data);
                 if (data.exception) 
                     result._excepted(data.exception);
                 else 
@@ -407,6 +409,10 @@ mwanzia.Application = mwanzia.RemoteObject.extend({
             }
         });
         return result;
+    },
+    
+    _parseResponse: function(data) {
+        return JSON.parse(data, mwanzia.buildJsonReviver());
     }
 });
 
@@ -430,27 +436,36 @@ mwanzia.stringify = function(obj) {
  * @param {String} key - unused
  * @param {Object} target - the object that's potentially replaced
  */
-mwanzia.jsonReviver = function(key, target) {
-	var result = target;
-    if (target != null) {
-        var targetTypeName = target['@class'];
-        
-        if (targetTypeName) {
-            var targetType = mwanzia.getFromMap(mwanzia, targetTypeName);
-            if (targetType == null) 
-                return target;
-            result = new targetType(target);
+mwanzia.buildJsonReviver = function() { 
+    return function(key, target) {
+    	var result = target;
+        if (target != null) {
+            var targetTypeName = target['@class'];
+            
+            if (targetTypeName) {
+                if (targetTypeName == "java.util.Date") {
+                    // Special handling for dates
+                    var result = new Date();
+                    result.setISO8601(target.isoString);
+                    return result;
+                }
+                var targetType = mwanzia.getFromMap(mwanzia, targetTypeName);
+                if (targetType == null) {
+                    return target;
+                }
+                result = new targetType(target);
+            }
+            else
+    	        if (typeof(target.match) != "undefined") {
+    	            // It's a string, see if we can convert to a date
+    	            if (mwanzia.testDate.exec(target) != null) {
+    	                result = new Date();
+    	                result.setISO8601(target);
+    	            }
+    	        }
         }
-        else
-	        if (typeof(target.match) != "undefined") {
-	            // It's a string, see if we can convert to a date
-	            if (mwanzia.testDate.exec(target) != null) {
-	                result = new Date();
-	                result.setISO8601(target);
-	            }
-	        }
+        return result;
     }
-    return result;
 }
 
 /**
@@ -462,16 +477,26 @@ mwanzia.jsonReviver = function(key, target) {
  */
 mwanzia.typeConvert = function(value, targetType){
     console.debug("Converting object to type", value, targetType);
-    if (value instanceof mwanzia.Application)
+    if (value instanceof mwanzia.Application) {
     	return null;
-    if (value == null) 
+    }
+    if (value == null) { 
         return null;
-    if (value instanceof mwanzia.Reference) 
+    }
+    if (value instanceof mwanzia.Reference) { 
         return value;
+    }
+    if (value instanceof Array) {
+        var newValue = [];
+        for (var i=0; i<value.length; i++) {
+            newValue.push(mwanzia.typeConvert(value[i], null));
+        }
+        return newValue;
+    }
     var conversionType = null;
-    if (typeof(value) == "string") 
+    if (typeof(value) == "string") {
         conversionType = "string";
-	if (typeof(value) == "number") {
+    } else if (typeof(value) == "number") {
 		conversionType = "number";
 		if (value != null) {
 			var potentialRemoteObject = mwanzia.getFromMap(mwanzia, targetType);
@@ -480,10 +505,12 @@ mwanzia.typeConvert = function(value, targetType){
 				return new mwanzia.Reference({"@class": targetType, id: value});
 			}
 		}
+	} else if (value instanceof Date) {
+	    conversionType = "date";
+	} else if (typeof(value) == "object") { 
+	    conversionType = "object";
 	}
-	if (typeof(value) == "object") 
-        conversionType = "object";
-    console.debug("Conversion type", conversionType);
+	console.debug("Conversion type", conversionType);
     if (conversionType == null) 
         return value;
     var conversion = mwanzia.typeConversions[conversionType][targetType];
@@ -506,6 +533,10 @@ mwanzia.typeConverters = {
     },
     string: function(value){
         return value == null ? null : '' + value;
+    },
+    date: function(value) {
+        if (value == null) return null;
+        return {"@class": "java.util.Date", isoString: value.toJSON()};
     }
 }
 
@@ -524,6 +555,9 @@ mwanzia.typeConversions = {
 	number: {
 		"java.lang.String": function(number) {return number == null ? null : '' + number},
 		"default": mwanzia.typeConverters.noop
+	},
+	date: {
+	    "default": mwanzia.typeConverters.date
 	},
     object: {
         "default": function(value, targetType){

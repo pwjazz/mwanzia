@@ -2,6 +2,7 @@ package org.mwanzia.extras.transactions;
 
 import java.lang.reflect.Method;
 
+import org.mwanzia.Application;
 import org.mwanzia.Interceptor;
 import org.mwanzia.Plugin;
 
@@ -16,6 +17,10 @@ import org.mwanzia.Plugin;
 public abstract class TransactionPlugin<T> extends Plugin {
     private static final ThreadLocal CURRENT_TRANSACTION = new ThreadLocal();
 
+    public TransactionPlugin(Application application) {
+        super(application);
+    }
+
     @Override
     public Interceptor buildInterceptor() {
 
@@ -23,14 +28,14 @@ public abstract class TransactionPlugin<T> extends Plugin {
             @Override
             public void beforeInvocation(Class targetClass, Method method) throws Exception {
                 if (requiresTransaction(method, method.getDeclaringClass())) {
-                   CURRENT_TRANSACTION.set((T) beginTransaction());
+                    CURRENT_TRANSACTION.set((T) beginTransaction());
                 }
                 super.beforeInvocation(targetClass, method);
             }
-            
+
             @Override
             public Object[] prepareInvocation(Object target, Method method, Object[] arguments) throws Exception {
-                
+
                 return super.prepareInvocation(target, method, arguments);
             }
 

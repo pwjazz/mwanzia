@@ -7,8 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 
-import org.codehaus.jackson.annotate.JsonBackReference;
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 
 @Entity
 public class Employee extends Person {
@@ -27,8 +26,7 @@ public class Employee extends Person {
     }
 
     @ManyToOne
-    @JsonProperty
-    @JsonBackReference
+    @JsonInclude
     public Company getCompany() {
         return company;
     }
@@ -38,8 +36,7 @@ public class Employee extends Person {
     }
 
     @ManyToMany
-    @JsonProperty
-    @JsonBackReference
+    @JsonInclude
     public Set<Branch> getBranches() {
         return branches;
     }

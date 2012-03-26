@@ -15,8 +15,7 @@ import net.sf.oval.constraint.AssertValid;
 import net.sf.oval.guard.Guarded;
 
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
-import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.Remote;
 import org.mwanzia.extras.transactions.RequiresTransaction;
 import org.mwanzia.extras.validation.validators.Required;
@@ -80,7 +79,7 @@ public class Company extends AbstractEntity {
         this.name = name;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getName() {
         return name;
     }
@@ -90,8 +89,7 @@ public class Company extends AbstractEntity {
     }
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    @JsonProperty
-    @JsonManagedReference
+    @JsonInclude
     public Set<Employee> getEmployees() {
         return employees;
     }
@@ -102,8 +100,7 @@ public class Company extends AbstractEntity {
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     @MapKey(name = "name")
-    @JsonProperty
-    @JsonManagedReference
+    @JsonInclude
     public Map<String, Branch> getBranches() {
         return branches;
     }

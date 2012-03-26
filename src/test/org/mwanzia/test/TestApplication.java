@@ -16,8 +16,9 @@ import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.crypto.hash.Sha256Hash;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
-import org.mwanzia.Application;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.mwanzia.Remote;
+import org.mwanzia.extras.jackson.JacksonApplication;
 import org.mwanzia.extras.jpa.hibernate.HibernateJPA2Plugin;
 import org.mwanzia.extras.security.shiro.ShiroPlugin;
 import org.mwanzia.extras.security.shiro.ShiroSecuredApplication;
@@ -26,16 +27,18 @@ import org.mwanzia.extras.validation.ValidationPlugin;
 import org.mwanzia.extras.validation.validators.Required;
 
 @Guarded
-public class TestApplication extends Application implements ShiroSecuredApplication {
+public class TestApplication extends JacksonApplication implements ShiroSecuredApplication {
     static {
         // Initialize the JPA persistence context
         JPA.initialize("demo");
     }
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public TestApplication() {
         super();
         // Register a plugin for doing transaction management
-        registerPlugin(new TransactionPlugin<EntityTransaction>() {
+        registerPlugin(new TransactionPlugin<EntityTransaction>(this) {
             @Override
             protected EntityTransaction beginTransaction() {
                 JPA.getInstance().clear();
@@ -54,13 +57,13 @@ public class TestApplication extends Application implements ShiroSecuredApplicat
                 transaction.rollback();
             }
         });
-        registerPlugin(new HibernateJPA2Plugin() {
+        registerPlugin(new HibernateJPA2Plugin(this) {
             @Override
             protected EntityManager getEntityManager() {
                 return JPA.getInstance().getEntityManager();
             }
         });
-        registerPlugin(new ValidationPlugin());
+        registerPlugin(new ValidationPlugin(this));
         registerPlugin(new ShiroPlugin(this));
     }
 

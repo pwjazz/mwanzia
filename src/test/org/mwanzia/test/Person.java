@@ -2,7 +2,7 @@ package org.mwanzia.test;
 
 import javax.persistence.MappedSuperclass;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.extras.validation.validators.Required;
 
 @MappedSuperclass
@@ -24,7 +24,7 @@ public class Person extends AbstractEntity {
         this.lastName = lastName;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getFirstName() {
         return firstName;
     }
@@ -33,7 +33,7 @@ public class Person extends AbstractEntity {
         this.firstName = firstName;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getLastName() {
         return lastName;
     }

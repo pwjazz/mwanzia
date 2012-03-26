@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="MacRoman" standalone="no"?>
 <jardesc>
-    <jar path="mwanzia/dist/mwanzia-0.1.0.jar"/>
+    <jar path="mwanzia/dist/mwanzia-0.1.1.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/mwanzia/jarexport.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>

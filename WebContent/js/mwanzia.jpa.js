@@ -21,10 +21,8 @@
 mwanzia.Reference = Class.extend({
     init: function(original){
         this["@class"] = "org.mwanzia.extras.jpa.Reference";
-        this.stub = {
-            "@class": original["@class"],
-            "id": original["id"]
-        };
+        this.targetClassName = original["@class"];
+        this.id = original["id"];
     }
 });
 
@@ -117,3 +115,57 @@ mwanzia.RemoteObject = mwanzia.RemoteObject.extend({
         return this.id;
     }
 });
+
+mwanzia.Application.prototype._parseResponse = function(data) {
+    // Use a custom reviver to handle references/cyclic references
+    var originalJsonReviver = mwanzia.buildJsonReviver();
+    var revivedObjectsByType = {};
+    
+    function jpaJsonReviver(key, target) {
+        var result = target;
+    	if (target != null) {
+            var targetTypeName = target['@class'];
+            if ("org.mwanzia.extras.jpa.Reference" == targetTypeName) {
+                // This is a reference - replace it with an instanceof mwanzia.Reference
+                return new mwanzia.Reference({"@class": target["targetClassName"], "id": target["id"]});
+            } else {
+                result = originalJsonReviver(key, target);
+                if (result instanceof mwanzia.RemoteObject) {
+                    var className = result["@class"];
+                    var revivedObjectsById = revivedObjectsByType[className];
+                    if (revivedObjectsById == null) {
+                        revivedObjectsById = {};
+                        revivedObjectsByType[className] = revivedObjectsById;
+                    }
+                    revivedObjectsById[result["id"]] = result;
+                }
+            }            
+        }
+    	return result;
+    }
+
+    function replaceReferences(object) {
+        if (object == null) return;
+        if (object instanceof mwanzia.Application) return;
+        if (!(object instanceof Array) && typeof(object) != "object") return;
+        for (var key in object) {
+            var value = object[key];
+            if (value instanceof mwanzia.Reference) {
+                var targetTypeName = value.targetClassName;
+                var revivedObjectsById = revivedObjectsByType[targetTypeName];
+                if (revivedObjectsById != null) {
+                    var revivedObject = revivedObjectsById[value.id];
+                    if (revivedObject != null) {
+                        object[key] = revivedObject;
+                    }
+                }
+            } else {
+                replaceReferences(value);
+            }
+        }
+    }
+    
+    var result = JSON.parse(data, jpaJsonReviver);
+    replaceReferences(result);
+    return result;
+};

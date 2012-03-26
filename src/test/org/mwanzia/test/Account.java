@@ -14,9 +14,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 
 import org.apache.shiro.authz.annotation.RequiresRoles;
-import org.codehaus.jackson.annotate.JsonBackReference;
-import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.Remote;
 import org.mwanzia.extras.transactions.RequiresTransaction;
 
@@ -62,8 +60,7 @@ public class Account extends AbstractEntity {
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonProperty
-    @JsonManagedReference
+    @JsonInclude
     @Remote
     public Customer getOwner() {
         return owner;
@@ -74,8 +71,7 @@ public class Account extends AbstractEntity {
     }
 
     @ManyToOne
-    @JsonProperty
-    @JsonBackReference
+    @JsonInclude
     public Branch getBranch() {
         return branch;
     }
@@ -84,7 +80,7 @@ public class Account extends AbstractEntity {
         this.branch = branch;
     }
 
-    @JsonProperty
+    @JsonInclude
     public UUID getNumber() {
         return number;
     }
@@ -93,7 +89,7 @@ public class Account extends AbstractEntity {
         this.number = number;
     }
 
-    @JsonProperty
+    @JsonInclude
     public Date getDateOpened() {
         return dateOpened;
     }
@@ -102,7 +98,7 @@ public class Account extends AbstractEntity {
         this.dateOpened = dateOpened;
     }
 
-    @JsonProperty
+    @JsonInclude
     public Date getDateClosed() {
         return dateClosed;
     }
@@ -120,7 +116,7 @@ public class Account extends AbstractEntity {
         this.transactions = transactions;
     }
 
-    @JsonProperty
+    @JsonInclude
     public BigDecimal getBalance() {
         BigDecimal balance = new BigDecimal("0.00");
         for (Transaction transaction : transactions) {
@@ -134,7 +130,7 @@ public class Account extends AbstractEntity {
     }
 
     @Transient
-    @JsonProperty
+    @JsonInclude
     public boolean isClosed() {
         return dateClosed != null && dateClosed.before(new Date());
     }

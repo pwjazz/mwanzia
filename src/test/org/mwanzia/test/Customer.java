@@ -10,8 +10,7 @@ import javax.persistence.OneToMany;
 import net.sf.oval.constraint.AssertValid;
 import net.sf.oval.constraint.Min;
 
-import org.codehaus.jackson.annotate.JsonBackReference;
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.Remote;
 import org.mwanzia.extras.validation.validators.Required;
 
@@ -24,7 +23,7 @@ public class Customer extends Person {
 
     @Required
     @Min(18)
-    private Integer age;
+    private long age;
 
     @Required
     @AssertValid
@@ -37,7 +36,7 @@ public class Customer extends Person {
         super();
     }
 
-    public Customer(String firstName, String lastName, String ssn, int age, Address address) {
+    public Customer(String firstName, String lastName, String ssn, long age, Address address) {
         super(firstName, lastName);
         this.ssn = ssn.replaceAll("[^0-9]", "");
         this.age = age;
@@ -52,17 +51,17 @@ public class Customer extends Person {
         this.ssn = ssn;
     }
     
-    @JsonProperty
-    public Integer getAge() {
+    @JsonInclude
+    public long getAge() {
         return age;
     }
 
-    public void setAge(Integer age) {
+    public void setAge(long age) {
         this.age = age;
     }
 
     @Embedded
-    @JsonProperty
+    @JsonInclude
     public Address getAddress() {
         return address;
     }
@@ -73,8 +72,6 @@ public class Customer extends Person {
 
     @Remote
     @OneToMany(mappedBy = "owner")
-    @JsonProperty
-    @JsonBackReference
     public Set<Account> getAccounts() {
         return accounts;
     }

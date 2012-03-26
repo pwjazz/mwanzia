@@ -7,6 +7,7 @@ import java.util.Set;
 import javax.persistence.metamodel.ManagedType;
 import javax.persistence.metamodel.Type.PersistenceType;
 
+import org.mwanzia.Application;
 import org.mwanzia.Interceptor;
 
 /**
@@ -23,6 +24,11 @@ import org.mwanzia.Interceptor;
  * @author percy
  */
 public abstract class JPA2Plugin extends JPAPlugin {
+
+    public JPA2Plugin(Application application) {
+        super(application);
+    }
+
     @Override
     public Interceptor buildInterceptor() {
         return new JPA2Interceptor();

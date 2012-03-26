@@ -13,6 +13,7 @@ import net.sf.oval.configuration.annotation.Constraint;
 import net.sf.oval.constraint.AssertValid;
 import net.sf.oval.guard.Guard;
 
+import org.mwanzia.Application;
 import org.mwanzia.Interceptor;
 import org.mwanzia.JSON;
 import org.mwanzia.MwanziaError;
@@ -30,11 +31,12 @@ public class ValidationPlugin extends Plugin {
 
     private boolean skipValidation = false;
 
-    public ValidationPlugin() {
-        this(false);
+    public ValidationPlugin(Application application) {
+        this(application, false);
     }
 
-    public ValidationPlugin(boolean skipValidation) {
+    public ValidationPlugin(Application application, boolean skipValidation) {
+        super(application);
         this.skipValidation = skipValidation;
     }
 
@@ -102,7 +104,7 @@ public class ValidationPlugin extends Plugin {
         }
     }
 
-    private static void writeValidations(PrettyPrinter js, List<Annotation> validationAnnotations, Class targetType) {
+    private void writeValidations(PrettyPrinter js, List<Annotation> validationAnnotations, Class targetType) {
         if (validationAnnotations.size() > 0) {
             js.write("{").indent().newline();
             boolean firstValidation = true;
@@ -121,7 +123,7 @@ public class ValidationPlugin extends Plugin {
                                     js.write(",").newline();
                                 js.write(String.format("%1$s: %2$s",
                                         annotationPropertyName,
-                                        JSON.serialize(method.invoke(annotation), false)));
+                                        application.serializeToJson(JSON.toJson(method.invoke(annotation), false))));
                                 firstProperty = false;
                             }
                         }

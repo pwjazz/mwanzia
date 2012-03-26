@@ -14,9 +14,7 @@ import javax.persistence.OneToMany;
 
 import net.sf.oval.constraint.AssertValid;
 
-import org.codehaus.jackson.annotate.JsonBackReference;
-import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.Remote;
 import org.mwanzia.extras.jpa.ByValue;
 import org.mwanzia.extras.transactions.RequiresTransaction;
@@ -35,7 +33,7 @@ public class Branch extends AbstractEntity {
 
     @Remote
     @RequiresTransaction
-    public Account openAccount(@Required @AssertValid @ByValue Customer owner) {
+    public Account openAccount(@Required @AssertValid @ByValue Customer owner, Date[] unusedParameter) {
         if (owner.getId() == null)
             JPA.getInstance().getEntityManager().persist(owner);
         Account account = new Account(owner, this, UUID.randomUUID(), new Date());
@@ -54,9 +52,8 @@ public class Branch extends AbstractEntity {
         this.address = address;
     }
 
+    @JsonInclude
     @ManyToOne
-    @JsonProperty
-    @JsonBackReference
     public Company getCompany() {
         return company;
     }
@@ -65,7 +62,7 @@ public class Branch extends AbstractEntity {
         this.company = company;
     }
 
-    @JsonProperty
+    @JsonInclude
     @ManyToOne
     public Employee getManager() {
         return manager;
@@ -75,7 +72,7 @@ public class Branch extends AbstractEntity {
         this.manager = manager;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getName() {
         return name;
     }
@@ -85,7 +82,7 @@ public class Branch extends AbstractEntity {
     }
 
     @Embedded
-    @JsonProperty
+    @JsonInclude
     public Address getAddress() {
         return address;
     }
@@ -95,8 +92,7 @@ public class Branch extends AbstractEntity {
     }
 
     @ManyToMany
-    @JsonProperty
-    @JsonManagedReference
+    @JsonInclude
     public Set<Employee> getEmployees() {
         return employees;
     }
@@ -107,8 +103,7 @@ public class Branch extends AbstractEntity {
 
     @Remote
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
-    @JsonProperty
-    @JsonManagedReference
+    @JsonInclude
     public Set<Account> getAccounts() {
         return accounts;
     }

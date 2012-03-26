@@ -1,9 +1,13 @@
 package org.mwanzia.extras.jpa.hibernate;
 
+import java.util.Map;
+
 import org.hibernate.Hibernate;
+import org.mwanzia.Application;
 import org.mwanzia.Interceptor;
 import org.mwanzia.JSON;
 import org.mwanzia.JSON.SerializationModifier;
+import org.mwanzia.SmallPropertyUtils.Property;
 import org.mwanzia.extras.jpa.JPA2Plugin;
 
 /**
@@ -16,10 +20,14 @@ import org.mwanzia.extras.jpa.JPA2Plugin;
 public abstract class HibernateJPA2Plugin extends JPA2Plugin {
     static {
         JSON.addSerializationModifier(new SerializationModifier() {
-            public <T> T modify(T original) {
+            public <T> T modify(T original, Property property, Map<String, Object> serializationContext) {
                 return HibernatePluginUtil.handleLazyInitialization(original);
             }
         });
+    }
+
+    public HibernateJPA2Plugin(Application application) {
+        super(application);
     }
 
     @Override

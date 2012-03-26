@@ -7,7 +7,7 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.Remote;
 import org.mwanzia.Transferable;
 
@@ -40,7 +40,7 @@ public abstract class AbstractEntity implements Serializable {
 
     @Id
     @GeneratedValue
-    @JsonProperty
+    @JsonInclude
     @Transferable
     public Long getId() {
         return id;
@@ -51,7 +51,7 @@ public abstract class AbstractEntity implements Serializable {
     }
 
     @Version
-    @JsonProperty
+    @JsonInclude
     @Transferable
     public Long getVersion() {
         return version;

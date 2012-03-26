@@ -8,6 +8,7 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.apache.shiro.subject.Subject;
+import org.mwanzia.Application;
 import org.mwanzia.Interceptor;
 import org.mwanzia.Plugin;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class ShiroPlugin extends Plugin {
     private ShiroSecuredApplication application;
 
     public ShiroPlugin(ShiroSecuredApplication application) {
-        super();
+        super((Application) application);
         this.application = application;
     }
 

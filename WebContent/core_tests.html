@@ -68,6 +68,8 @@
                                             assertTrue("Manager inheritance from Person", manager instanceof Person);
                                             assertEquals("Manager name", "First Manager", manager.firstName + " " + manager.lastName);
                                             assertEquals("Manager full name", "First Manager", manager.getFullName());
+                                            assertEquals("Manager available transitively", manager, manager.company.employees[0]);
+                                            assertEquals("Manager first name available transitively", manager.firstName, manager.company.employees[0].firstName);
                                             console.debug("Open a branch with invalid address");
                                             company.newBranch(manager.byReference(), "Austin Branch", new Address({
                                                 line1: "2110 Slaughter Lane",
@@ -126,7 +128,7 @@
                                                                     state: "TX",
                                                                     postalCode: "78748"
                                                                 }
-                                                            }).success(function(account){
+                                                            }, [new Date(), new Date()]).success(function(account){
                                                                 assertTrue("Account has owner", account.owner != null);
                                                                 var invocation = account.getOwner();
                                                                 assertTrue("getOwner() is a LazyAjaxInvocation", invocation instanceof mwanzia.LazyAjaxInvocation);
@@ -201,7 +203,7 @@
         </p>
         <h1>Mwanzia Core and JPA Tests</h1>
         <p>
-            This page contains tests for the main compoments of the Mwanzia framework, using the back-end application TestApplication.
+            This page contains tests for the main components of the Mwanzia framework, using the back-end application TestApplication.
         </p>
         <p>
             The tests start running as soon as the page has loaded.

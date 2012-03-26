@@ -1,7 +1,7 @@
 # Mwanzia Overview
 
 WARNING - Mwanzia is still under active development and should be considered
-beta quality at best
+alpha quality
 
 Mwanzia makes your Java objects available from JavaScript so that you can access
 their data and invoke remote functions with no boilerplate code.
@@ -97,14 +97,9 @@ handful of unavoidable peculiarities.
   
 + Any Java objects that are sent to/from the client as JSON require the
   developer to manage the usual things like handling cyclic references,
-  Hibernate lazy loading and so on.  Mwanzia uses the popular 
-  [Jackson JSON processer](http://jackson.codehaus.org/), which provides
-  excellent support for dealing with
-  [cyclic references](http://wiki.fasterxml.com/JacksonFeatureBiDirReferences).
-  Mwanzia beefs up this support by automatically resolving back-references on
-  the client so that you end up with a complete object graph.  Mwanzia's 
-  Hibernate JPA Plugin also deals with lazy loading, so for most scenarios
-  developers don't have much to worry about.
+  Hibernate lazy loading and so on.  The Hibernate JPA Plugin provides a
+  @JsonReference annotation that makes this very easy, so for most scenarios
+  developers don't need to worry about this.
 
 + Depending on which plugins are used, there may be other peculiarities.
 
@@ -131,8 +126,6 @@ introducing any significant new ones.
    instance of the appropriate type, and then set all properties marked as
    @Transferable (in this case, the property "id").  Then it calls the method.
    
-Note - JSON is handled on the server using [Jackson](http://jackson.codehaus.org/).
-  
 ## In-Browser Unit Tests
 
 If you want to dive right in to the gory details, take a look at our live
@@ -164,17 +157,7 @@ To use Mwanzia, you'll need to:
     <tr>
         <td>Core</td>
         <td>Mwanzia</td>
-        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/dist/mwanzia-0.1.0.jar">mwanzia-0.1.0.jar</a></td>
-    </tr>
-    <tr>
-        <td>Core</td>
-        <td><a href="http://jackson.codehaus.org/">Jackson Core</a></td>
-        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/jackson-core-lgpl-1.6.0.jar">jackson-core-lgpl-1.6.0.jar</a></td>
-    </tr>
-    <tr>
-        <td>Core</td>
-        <td><a href="http://jackson.codehaus.org/">Jackson Mapper</a></td>
-        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/WebContent/WEB-INF/lib/jackson-mapper-lgpl-1.6.0.jar">jackson-mapper-lgpl-1.6.0.jar</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/dist/mwanzia-0.1.1.jar">mwanzia-0.1.1.jar</a></td>
     </tr>
     <tr>
         <td>Core</td>
@@ -229,9 +212,15 @@ In order to use Mwanzia, you create a sub-class of org.mwanzia.Application.
 Inside the constructor, you register classes for remote access using the
 method registerRemote().
 
+You also need to implement hooks into whatever JSON parser you're using.
+In our case, we use Jackson by just subclassing the built-in JacksonApplication.
+
+If you use your a different JSON parser, just make sure that it is capable of
+representing objects as maps.  Most JSON parsers should work fine.  
+
     package org.mwanzia.demo;
     
-    public class DemoApplication extends org.mwanzia.Application {
+    public class DemoApplication extends org.mwanzia.extras.jackson.JacksonApplication {
         public DemoApplication() {
             super();
             // Register Account as a remoteable class in this Application
@@ -394,13 +383,10 @@ Properties are only available if the object was read from the server.
     
 ### Cyclic References
 
-With Mwanzia, use the standard Jackson annotations @JsonIgnore,
-@JsonManagedReference and @JsonBackReference to deal with pruning your
-object graph on return to the client.
-
-When using the JPA plugin, if you use @JsonManagedReference and
-@JsonBackReference for persistent entities, Mwanzia will do its best to
-reconstruct your object graph on the client.
+With Mwanzia, use the annotation @JsonExclude to deal with pruning your
+object graph on return to the client.  If using the JPA Plugin, you can use the
+@JsonReference for more sophisticated handling of back-references (see JPA
+Plugin section below).
 
 ##### Java Code
 
@@ -801,9 +787,9 @@ Your Mwanzia Application can use either whitelisting or blacklisting to
 restrict client-side access to properties on your Java beans.  The default mode
 is whitelisting.
 
-+ *@JsonProperty* - add this to the getter method to whitelist the property
++ *@JsonInclude* - add this to the getter method to whitelist the property
 
-+ *@JsonIgnore* - add this to the getter method to blacklist the property
++ *@JsonExclude* - add this to the getter method to blacklist the property
 
 #### JPA Pass-by-Reference
 
@@ -920,6 +906,57 @@ On the client, you can then do something like this:
 All persistent types are automatically exported to the client and eligible for
 remote access.  Individual methods still need to be marked as @Remote to allow
 remote invocation.
+
+#### Handling Cyclic References
+
+In the commonly used bi-directional mapping, the object graph ends up with
+cyclic references.  JSON has no way of representing these, but Mwanzia adds its
+own mechanism for handling them.  Mwanzia allows certain values to be passed
+back to the client by reference.  When this happens, Mwanzia will automatically
+replace the reference with the full object if and only if that object was sent
+back as part of that same response.
+
+To return a property by reference, mark the getter method with the annotation
+@JsonReference.
+
+##### Java Code
+
+    public class Child {
+        private Long id;
+        private Parent parent;
+        
+        @ManyTo
+        @JsonReference
+        public Parent getParent() {
+            return parent;
+        }    
+    }
+    
+    public class Parent {
+        private Long id;
+        private Set<Child> children;
+        
+        @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch=FetchType.EAGER)
+        public Set<Child> getChildren() {
+            return children;
+        }
+        
+        @Remote
+        public static Parent findParentSomehow() { ... }
+    }
+    
+##### JavaScript
+
+    Parent.findParentSomehow(function(parent) {
+        for (var i=0; i<parent.children.length; i++) {
+            var child = parent.children[i];
+            // The below is true
+            if (child.parent == parent) {
+                // This will be true
+            }
+        }
+    }).go();
+
 
 #### Automatic Handling for Lazy Loading (Hibernate Only)
 

@@ -1,7 +1,5 @@
 package org.mwanzia.extras.security.shiro;
 
-import org.codehaus.jackson.annotate.JsonProperty;
-
 /**
  * Indicates that there was a problem with the user's login.
  * 
@@ -26,9 +24,5 @@ public class AuthenticationException extends Exception {
     public AuthenticationException(Throwable arg0) {
         super(arg0);
     }
-    
-    @JsonProperty
-    public String getMessage() {
-        return super.getMessage();
-    }
+
 }

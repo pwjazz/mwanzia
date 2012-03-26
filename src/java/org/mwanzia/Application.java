@@ -3,10 +3,8 @@ package org.mwanzia;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -15,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.codehaus.jackson.map.util.StdDateFormat;
 import org.mwanzia.SmallPropertyUtils.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +65,22 @@ public abstract class Application {
     protected Application() {
         this(true);
     }
+
+    /**
+     * Implement this to hook into whatever JSON serializer you're using.
+     * 
+     * @param object
+     * @return
+     */
+    public abstract String serializeToJson(Object object);
+
+    /**
+     * Implement this to hook into whatever JSON parser you're using.
+     * 
+     * @param json
+     * @return
+     */
+    public abstract Map<String, Object> parseJson(String json);
 
     /**
      * Register a class that is eligible for remoting withing the context of
@@ -133,17 +146,15 @@ public abstract class Application {
         for (Interceptor interceptor : interceptors) {
             interceptor.beforeInvocation(targetClass, method);
         }
-        Call call = JSON.deserialize(callString, Call.class);
-        Object target = call.getTarget();
-        List arguments = call.getArguments();
-
-        final Iterator<Plugin> pluginIterator = plugins.iterator();
+        Map<String, Object> call = parseJson(callString);
+        Object target = JSON.fromJson(call.get("target"), targetClass);
         Class[] argumentTypes = method.getParameterTypes();
-        Object[] coercedArguments = new Object[arguments.size()];
-        for (int i = 0; i < arguments.size(); i++) {
-            Object argument = arguments.get(i);
-            coercedArguments[i] = coerce(argument, argumentTypes[i]);
+        List<Object> jsonArguments = (List<Object>) call.get("arguments");
+        Object[] arguments = new Object[jsonArguments.size()];
+        for (int i = 0; i < jsonArguments.size(); i++) {
+            arguments[i] = JSON.fromJson(jsonArguments.get(i), argumentTypes[i]);
         }
+        final Iterator<Plugin> pluginIterator = plugins.iterator();
         Map<String, Object> resultMap = new LinkedHashMap<String, Object>();
         resultMap.put("result", null);
         resultMap.put("exception", null);
@@ -151,9 +162,9 @@ public abstract class Application {
             for (Interceptor interceptor : interceptors) {
                 if (target != null)
                     target = interceptor.replaceTarget(target);
-                coercedArguments = interceptor.prepareInvocation(target, method, coercedArguments);
+                arguments = interceptor.prepareInvocation(target, method, arguments);
             }
-            Object result = method.invoke(target, coercedArguments);
+            Object result = method.invoke(target, arguments);
             if (result != null) {
                 for (Interceptor interceptor : interceptors) {
                     result = interceptor.replaceResult(result);
@@ -173,7 +184,7 @@ public abstract class Application {
             LOGGER.info("Returning exception from {}", method, exception);
             resultMap.put("exception", exception);
         }
-        return JSON.serialize(resultMap, whitelistProperties);
+        return serializeToJson(JSON.toJson(resultMap, whitelistProperties));
     }
 
     String coreJavaScript() throws Exception {
@@ -225,7 +236,7 @@ public abstract class Application {
             properties.put(descriptor.name, descriptor.read(this));
         }
         return String.format("mwanzia._apps.%1$s = new mwanzia.%2$s('%3$s', '%4$s', %5$s);", this.name, this.getClass()
-                .getName(), name, servletUrl, JSON.serialize(properties, whitelistProperties));
+                .getName(), name, servletUrl, serializeToJson(JSON.toJson(properties, false)));
     }
 
     private void writeClass(PrettyPrinter js, Class clazz, String baseClassName, Runnable constructor) {
@@ -257,10 +268,8 @@ public abstract class Application {
         Set<String> transferableProperties = new HashSet<String>();
         for (Property descriptor : SmallPropertyUtils.getProperties(clazz).values()) {
             if (clazz.isAnnotationPresent(Transferable.class)
-                    || (descriptor.isReadable() && descriptor.readMethod
-                            .isAnnotationPresent(Transferable.class))
-                    || (descriptor.isWriteable() && descriptor.writeMethod
-                            .isAnnotationPresent(Transferable.class))) {
+                    || (descriptor.isReadable() && descriptor.readMethod.isAnnotationPresent(Transferable.class))
+                    || (descriptor.isWriteable() && descriptor.writeMethod.isAnnotationPresent(Transferable.class))) {
                 transferableProperties.add(descriptor.name);
             }
         }
@@ -427,61 +436,6 @@ public abstract class Application {
             current = current.getSuperclass();
         }
         return hierarchy;
-    }
-
-    private static Object coerce(Object result, Class expectedType) {
-        if (expectedType != null && result != null && !expectedType.isAssignableFrom(result.getClass())) {
-            for (TypeCoercer<? extends Object, ? extends Object> coercer : TYPE_COERCERS) {
-                if (coercer.inputType.equals(result.getClass()) && coercer.outputType.equals(expectedType)) {
-                    return ((TypeCoercer<Object, Object>) coercer).coerce(result);
-                }
-            }
-            if (!expectedType.isPrimitive())
-                throw new MwanziaException(
-                        String.format("Error while coercing argument. Object of type %1$s cannot be used in place of %2$s",
-                                result.getClass().getName(),
-                                expectedType.getName()));
-        }
-        return result;
-    }
-
-    protected static abstract class TypeCoercer<I, O> {
-        public Class<I> inputType;
-        public Class<O> outputType;
-
-        public TypeCoercer(Class<I> inputType, Class<O> outputType) {
-            this.inputType = inputType;
-            this.outputType = outputType;
-        }
-
-        public abstract O coerce(I input);
-    }
-
-    protected static final List<TypeCoercer<? extends Object, ? extends Object>> TYPE_COERCERS = new ArrayList<TypeCoercer<? extends Object, ? extends Object>>();
-
-    static {
-        TYPE_COERCERS.add(new TypeCoercer<Integer, Long>(Integer.class, Long.class) {
-            @Override
-            public Long coerce(Integer input) {
-                return new Long(input);
-            }
-        });
-        TYPE_COERCERS.add(new TypeCoercer<String, Date>(String.class, Date.class) {
-            @Override
-            public Date coerce(String input) {
-                try {
-                    return input == null ? null : StdDateFormat.getBlueprintISO8601Format().parse(input);
-                } catch (ParseException pe) {
-                    throw new MwanziaException(String.format("Unable to parse date string '%1$s'", input), pe);
-                }
-            }
-        });
-        TYPE_COERCERS.add(new TypeCoercer<String, char[]>(String.class, char[].class) {
-            @Override
-            public char[] coerce(String input) {
-                return input.toCharArray();
-            }
-        });
     }
 
     private Set<Class> collectTypes(Set<Class> types, Class type) {

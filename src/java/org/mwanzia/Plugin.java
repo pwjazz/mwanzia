@@ -7,15 +7,20 @@ import java.util.Set;
 
 /**
  * <p>
- * Defines a Plugin to the Mwanzia framework. Plugins can contribute enhancements
- * to the generated JavaScript code and can also modify the request processing
- * behavior by registering an Interceptor.
+ * Defines a Plugin to the Mwanzia framework. Plugins can contribute
+ * enhancements to the generated JavaScript code and can also modify the request
+ * processing behavior by registering an Interceptor.
  * </p>
  * 
  * @author percy
  * 
  */
 public abstract class Plugin {
+    protected final Application application;
+
+    public Plugin(Application application) {
+        this.application = application;
+    }
 
     /**
      * <p>

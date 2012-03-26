@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 import org.mwanzia.Remote;
 import org.mwanzia.Transferable;
 import org.mwanzia.extras.transactions.RequiresTransaction;
@@ -39,7 +39,7 @@ public class Transaction extends AbstractEntity {
     }
 
     @ManyToOne
-    @JsonProperty
+    @JsonInclude
     public Account getAccount() {
         return account;
     }
@@ -48,7 +48,7 @@ public class Transaction extends AbstractEntity {
         this.account = account;
     }
 
-    @JsonProperty
+    @JsonInclude
     public BigDecimal getAmount() {
         return amount;
     }
@@ -57,7 +57,7 @@ public class Transaction extends AbstractEntity {
         this.amount = amount;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getMemo() {
         return memo;
     }

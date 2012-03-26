@@ -1,6 +1,6 @@
 package org.mwanzia.test;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import org.mwanzia.JsonInclude;
 
 public enum State {
     CA("California"), NY("New York"), TX("Texas");
@@ -11,7 +11,7 @@ public enum State {
         this.name = name;
     }
 
-    @JsonProperty
+    @JsonInclude
     public String getName() {
         return this.name;
     }

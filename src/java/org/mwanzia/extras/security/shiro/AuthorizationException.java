@@ -1,7 +1,5 @@
 package org.mwanzia.extras.security.shiro;
 
-import org.codehaus.jackson.annotate.JsonProperty;
-
 /**
  * Indicates that there was a problem authorizing the user's access to a method.
  * 
@@ -25,10 +23,5 @@ public class AuthorizationException extends Exception {
 
     public AuthorizationException(Throwable arg0) {
         super(arg0);
-    }
-
-    @JsonProperty
-    public String getMessage() {
-        return super.getMessage();
     }
 }
