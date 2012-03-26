@@ -397,8 +397,7 @@ mwanzia.Application = mwanzia.RemoteObject.extend({
                 call: mwanzia.stringify(call)
             },
             success: function(data, textStatus, xhr){
-                console.error(data);
-				data = app._parseResponse(data);
+                data = app._parseResponse(data);
                 if (data.exception) 
                     result._excepted(data.exception);
                 else 
