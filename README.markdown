@@ -925,7 +925,7 @@ To return a property by reference, mark the getter method with the annotation
         private Long id;
         private Parent parent;
         
-        @ManyTo
+        @ManyToOne
         @JsonReference
         public Parent getParent() {
             return parent;
