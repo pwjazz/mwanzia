@@ -7,7 +7,6 @@ import org.mwanzia.Application;
 import org.mwanzia.Interceptor;
 import org.mwanzia.JSON;
 import org.mwanzia.JSON.SerializationModifier;
-import org.mwanzia.SmallPropertyUtils.Property;
 import org.mwanzia.extras.jpa.JPA2Plugin;
 
 /**
@@ -20,7 +19,7 @@ import org.mwanzia.extras.jpa.JPA2Plugin;
 public abstract class HibernateJPA2Plugin extends JPA2Plugin {
     static {
         JSON.addSerializationModifier(new SerializationModifier() {
-            public <T> T modify(T original, Property property, Map<String, Object> serializationContext) {
+            public <T> T modify(T original, Map<String, Object> serializationContext) {
                 return HibernatePluginUtil.handleLazyInitialization(original);
             }
         });

@@ -13,43 +13,81 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Utility for performing reflection on properties.
+ * 
+ * @author percy wegmann ( percy <at> karen and percy <dot> net )
+ * 
+ */
 public class SmallPropertyUtils {
+    // Cache for property information
+    private static final Map<Class, Map<String, Property>> PROPERTY_CACHE = new ConcurrentHashMap<Class, Map<String, Property>>();
+
+    /**
+     * Retrieve a map of Properties by name for the given object.
+     * 
+     * @param object
+     * @return
+     */
     public static Map<String, Property> getProperties(Object object) {
         return getProperties(object.getClass());
     }
 
+    /**
+     * Retrieve a map of Properties by name for the given class.
+     * 
+     * @param clazz
+     * @return
+     */
     public static Map<String, Property> getProperties(Class clazz) {
-        Map<String, Property> properties = new HashMap<String, Property>();
-        for (Method method : clazz.getMethods()) {
-            String methodName = method.getName();
-            boolean isReadMethod = (methodName.startsWith("get") || ((Boolean.TYPE.isAssignableFrom(method
-                    .getReturnType()) || Boolean.class.isAssignableFrom(method.getReturnType())) && methodName
-                    .startsWith("is")))
-                    && method.getParameterTypes().length == 0;
-            boolean isWriteMethod = methodName.startsWith("set") && method.getParameterTypes().length == 1;
-            if (isReadMethod || isWriteMethod) {
-                String propertyName = null;
-                if (methodName.startsWith("is")) {
-                    propertyName = methodName.substring(2, 3).toLowerCase() + methodName.substring(3);
-                } else {
-                    propertyName = methodName.substring(3, 4).toLowerCase() + methodName.substring(4);
+        Map<String, Property> properties = PROPERTY_CACHE.get(clazz);
+        if (properties == null) {
+            properties = new HashMap<String, Property>();
+            for (Method method : clazz.getMethods()) {
+                if (method.getDeclaringClass() == Object.class) {
+                    // Skip properties from base Object class
+                    continue;
                 }
-                Property property = properties.get(propertyName);
-                if (property == null) {
-                    property = new Property(propertyName);
-                    properties.put(propertyName, property);
-                }
-                if (isReadMethod) {
-                    property.readMethod = method;
-                } else {
-                    property.writeMethod = method;
+                String methodName = method.getName();
+                boolean isReadMethod = (methodName.startsWith("get") || ((Boolean.TYPE.isAssignableFrom(method
+                        .getReturnType()) || Boolean.class.isAssignableFrom(method.getReturnType())) && methodName
+                        .startsWith("is")))
+                        && method.getParameterTypes().length == 0;
+                boolean isWriteMethod = methodName.startsWith("set") && method.getParameterTypes().length == 1;
+                if (isReadMethod || isWriteMethod) {
+                    String propertyName = null;
+                    if (methodName.startsWith("is")) {
+                        propertyName = methodName.substring(2, 3).toLowerCase() + methodName.substring(3);
+                    } else {
+                        propertyName = methodName.substring(3, 4).toLowerCase() + methodName.substring(4);
+                    }
+                    Property property = properties.get(propertyName);
+                    if (property == null) {
+                        property = new Property(propertyName);
+                        properties.put(propertyName, property);
+                    }
+                    if (isReadMethod) {
+                        property.setReadMethod(method);
+                    } else {
+                        property.setWriteMethod(method);
+                    }
                 }
             }
+            PROPERTY_CACHE.put(clazz, properties);
         }
         return properties;
     }
 
+    /**
+     * Read the property of the given object identified by the given name.
+     * 
+     * @param <T>
+     * @param object
+     * @param name
+     * @return
+     */
     public static <T> T readProperty(Object object, String name) {
         if (object instanceof Map) {
             return (T) ((Map) object).get(name);
@@ -58,6 +96,14 @@ public class SmallPropertyUtils {
         }
     }
 
+    /**
+     * Set the property on the given object of the given name with the given
+     * value.
+     * 
+     * @param object
+     * @param name
+     * @param value
+     */
     public static void writeProperty(Object object, String name, Object value) {
         if (object instanceof Map) {
             ((Map) object).put(name, value);
@@ -66,9 +112,46 @@ public class SmallPropertyUtils {
         }
     }
 
+    /**
+     * <p>
+     * Coerce the given value to the specified type using common sense
+     * conversions.
+     * </p>
+     * 
+     * <p>
+     * Numbers - converted on the basis if Number.intValue(),
+     * Number.doubleValue(), etc.
+     * </p>
+     * 
+     * <p>
+     * Collections - convert between Lists, Sets and SortedSets as appropriate.
+     * </p>
+     * 
+     * <p>
+     * char[] <-> String
+     * </p>
+     * 
+     * <p>
+     * String -> UUID
+     * </p>
+     * 
+     * <p>
+     * String -> Enum
+     * </p>
+     * 
+     * <p>
+     * Anyting -> String -- using .toString()
+     * </p>
+     * 
+     * @param <T>
+     * @param value
+     * @param targetType
+     * @return
+     */
     public static <T> T coerce(Object value, Class<T> targetType) {
         if (value == null)
             return null;
+
         if (value.getClass() != targetType && Number.class.isAssignableFrom(targetType)) {
             // Handle numeric conversions
             Number number = (Number) value;
@@ -100,62 +183,110 @@ public class SmallPropertyUtils {
                 && Character.TYPE.isAssignableFrom(targetType.getComponentType())) {
             // Convert string to char[]
             value = ((String) value).toCharArray();
+        } else if (value instanceof char[] && String.class.isAssignableFrom(targetType)) {
+            // Convert char[] to string
+            value = String.valueOf((char[]) value);
         } else if (targetType.isEnum() && value instanceof String) {
+            // Convert string to enum
             try {
                 value = targetType.getMethod("valueOf", new Class[] { String.class }).invoke(null, value);
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage(), e);
             }
         } else if (UUID.class.isAssignableFrom(targetType) && value instanceof String) {
+            // Convert string to UUID
             value = UUID.fromString((String) value);
         } else if (String.class.isAssignableFrom(targetType) && !(value instanceof String)) {
+            // Convert anything to string
             value = value.toString();
         }
         return (T) value;
     }
 
+    /**
+     * Represents a named property on an object.
+     * 
+     * @author percy wegmann ( percy <at> karen and percy <dot> net )
+     * 
+     */
     public static class Property {
-        public String name;
-        public Method readMethod;
-        public Method writeMethod;
+        private String name;
+        private Method readMethod;
+        private Method writeMethod;
+        private Class propertyType;
+        private boolean readable;
+        private boolean writeable;
+        private boolean jsonIncluded;
+        private boolean jsonExcluded;
 
         public Property(String name) {
             this.name = name;
         }
 
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Method getReadMethod() {
+            return readMethod;
+        }
+
+        public void setReadMethod(Method readMethod) {
+            this.readMethod = readMethod;
+            if (readMethod != null) {
+                this.readable = true;
+                if ("message".equals(name) && Throwable.class.isAssignableFrom(readMethod.getDeclaringClass())) {
+                    this.jsonIncluded = true;
+                } else {
+                    this.jsonIncluded = readMethod.isAnnotationPresent(JsonInclude.class)
+                            || readMethod.getDeclaringClass().isAnnotationPresent(JsonInclude.class);
+                }
+                this.propertyType = readMethod.getReturnType();
+            }
+            this.jsonExcluded = readMethod == null || readMethod.isAnnotationPresent(JsonExclude.class)
+                    || readMethod.getDeclaringClass().isAnnotationPresent(JsonExclude.class);
+        }
+
+        public Method getWriteMethod() {
+            return writeMethod;
+        }
+
+        public void setWriteMethod(Method writeMethod) {
+            this.writeMethod = writeMethod;
+            if (writeMethod != null) {
+                this.writeable = true;
+                if (propertyType == null) {
+                    propertyType = writeMethod.getParameterTypes()[0];
+                }
+            }
+        }
+
         public boolean isReadable() {
-            return readMethod != null;
+            return readable;
         }
 
         public boolean isWriteable() {
-            return writeMethod != null;
+            return writeable;
+        }
+
+        public Class getPropertyType() {
+            return propertyType;
         }
 
         public boolean isJsonIncluded() {
-            if ("message".equals(name) && Throwable.class.isAssignableFrom(readMethod.getDeclaringClass())) {
-                return true;
-            }
-            return isReadable()
-                    && (readMethod.isAnnotationPresent(JsonInclude.class) || readMethod.getDeclaringClass()
-                            .isAnnotationPresent(JsonInclude.class));
+            return jsonIncluded;
         }
 
         public boolean isJsonExcluded() {
-            return !isReadable()
-                    || (readMethod.isAnnotationPresent(JsonExclude.class) || readMethod.getDeclaringClass()
-                            .isAnnotationPresent(JsonExclude.class));
+            return jsonExcluded;
         }
 
         public boolean isReadAnnotationPresent(Class<? extends Annotation> annotationClass) {
             return readMethod != null && readMethod.isAnnotationPresent(annotationClass);
-        }
-
-        public Class getPropertyType() {
-            if (isReadable()) {
-                return readMethod.getReturnType();
-            } else {
-                return writeMethod.getParameterTypes()[0];
-            }
         }
 
         public <T> T read(Object source) {

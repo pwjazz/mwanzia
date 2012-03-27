@@ -35,7 +35,7 @@ import org.mwanzia.extras.jpa.JPAPlugin;
 public abstract class HibernateJPA1Plugin extends JPAPlugin {
     static {
         JSON.addSerializationModifier(new SerializationModifier() {
-            public <T> T modify(T original, Property property, Map<String, Object> serializationContext) {
+            public <T> T modify(T original, Map<String, Object> serializationContext) {
                 return HibernatePluginUtil.handleLazyInitialization(original);
             }
         });

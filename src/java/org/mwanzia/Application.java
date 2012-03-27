@@ -233,7 +233,7 @@ public abstract class Application {
         // Instantiate application (including properties)
         Map<Object, Object> properties = new LinkedHashMap<Object, Object>();
         for (Property descriptor : SmallPropertyUtils.getProperties(this.getClass()).values()) {
-            properties.put(descriptor.name, descriptor.read(this));
+            properties.put(descriptor.getName(), descriptor.read(this));
         }
         return String.format("mwanzia._apps.%1$s = new mwanzia.%2$s('%3$s', '%4$s', %5$s);", this.name, this.getClass()
                 .getName(), name, servletUrl, serializeToJson(JSON.toJson(properties, false)));
@@ -268,9 +268,9 @@ public abstract class Application {
         Set<String> transferableProperties = new HashSet<String>();
         for (Property descriptor : SmallPropertyUtils.getProperties(clazz).values()) {
             if (clazz.isAnnotationPresent(Transferable.class)
-                    || (descriptor.isReadable() && descriptor.readMethod.isAnnotationPresent(Transferable.class))
-                    || (descriptor.isWriteable() && descriptor.writeMethod.isAnnotationPresent(Transferable.class))) {
-                transferableProperties.add(descriptor.name);
+                    || (descriptor.isReadable() && descriptor.getReadMethod().isAnnotationPresent(Transferable.class))
+                    || (descriptor.isWriteable() && descriptor.getWriteMethod().isAnnotationPresent(Transferable.class))) {
+                transferableProperties.add(descriptor.getName());
             }
         }
         writeInstanceMethods(js, clazz, instanceMethods);
@@ -377,7 +377,7 @@ public abstract class Application {
                     js.write(", ").newline();
                 // exclude indexed properties
                 if (descriptor.getPropertyType() != null) {
-                    js.write(String.format("\"%1$s\": \"%2$s\"", descriptor.name, descriptor.getPropertyType()
+                    js.write(String.format("\"%1$s\": \"%2$s\"", descriptor.getName(), descriptor.getPropertyType()
                             .getName()));
                     firstPropertyType = false;
                 }
@@ -442,7 +442,7 @@ public abstract class Application {
         if (type == null || types.contains(type))
             return types;
         for (Property descriptor : SmallPropertyUtils.getProperties(type).values()) {
-            LOGGER.debug("Collecting type descriptor for property {} on class {}", descriptor.name, type.getName());
+            LOGGER.debug("Collecting type descriptor for property {} on class {}", descriptor.getName(), type.getName());
             // This excludes indexed properties
             if (descriptor.getPropertyType() != null) {
                 // Add the property

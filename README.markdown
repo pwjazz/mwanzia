@@ -157,7 +157,7 @@ To use Mwanzia, you'll need to:
     <tr>
         <td>Core</td>
         <td>Mwanzia</td>
-        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/dist/mwanzia-0.1.1.jar">mwanzia-0.1.1.jar</a></td>
+        <td><a href="https://github.com/pwjazz/mwanzia/raw/master/dist/mwanzia-0.1.2.jar">mwanzia-0.1.2.jar</a></td>
     </tr>
     <tr>
         <td>Core</td>

@@ -137,11 +137,11 @@ public class ValidationPlugin extends Plugin {
                             // Exclude indexed properties
                             if (descriptor.getPropertyType() != null) {
                                 List<Annotation> childValidationAnnotations = collectValidationAnnotations(descriptor
-                                        .readMethod.getAnnotations());
+                                        .getReadMethod().getAnnotations());
                                 if (childValidationAnnotations.size() > 0) {
                                     if (!firstChildProperty)
                                         js.write(",").newline();
-                                    js.write(String.format("%1$s: ", descriptor.name));
+                                    js.write(String.format("%1$s: ", descriptor.getName()));
                                     writeValidations(js, childValidationAnnotations, descriptor.getPropertyType());
                                     firstChildProperty = false;
                                 }

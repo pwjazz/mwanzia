@@ -16,7 +16,6 @@ import org.mwanzia.JSON.DeserializationModifier;
 import org.mwanzia.JSON.SerializationModifier;
 import org.mwanzia.Plugin;
 import org.mwanzia.SmallPropertyUtils;
-import org.mwanzia.SmallPropertyUtils.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +52,7 @@ public abstract class JPAPlugin extends Plugin {
         });
 
         JSON.addSerializationModifier(new SerializationModifier() {
-            public <T> T modify(T original, Property property, Map<String, Object> serializationContext)
-                    throws Exception {
+            public <T> T modify(T original, Map<String, Object> serializationContext) throws Exception {
                 T result = original;
                 if (original != null && original.getClass().isAnnotationPresent(Entity.class)) {
                     EntityKey key = new EntityKey(original);

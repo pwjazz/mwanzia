@@ -14,7 +14,10 @@ import java.util.Map;
 import org.mwanzia.SmallPropertyUtils.Property;
 
 /**
- * Utility for serializing and deserializing JSON.
+ * Utility for serializing and deserializing objects into JSON-like maps,
+ * collections and so on. Mwanzia's JSON is just like regular JSON except that
+ * typed objects automatically include a "@class" property that lets Mwanzia
+ * know the exact class for each object.
  * 
  * @author percy
  * 
@@ -40,7 +43,7 @@ public class JSON {
      * 
      */
     public static interface SerializationModifier {
-        public <T> T modify(T original, Property property, Map<String, Object> serializationContext) throws Exception;
+        public <T> T modify(T original, Map<String, Object> serializationContext) throws Exception;
     }
 
     public static interface DeserializationModifier {
@@ -53,7 +56,9 @@ public class JSON {
      * 
      * @param <T>
      * @param json
+     *            - the json map/collection/etc
      * @param clazz
+     *            - the target class for the object being converted (optional)
      * @return
      */
     public static <T> T fromJson(Object json, Class clazz) {
@@ -64,6 +69,8 @@ public class JSON {
             Map<String, Object> in = (Map<String, Object>) json;
             try {
                 if (clazz == null || Object.class == clazz) {
+                    // If a specific class was not given, try to find out the
+                    // class by examining the embedded @class property
                     String className = (String) in.get("@class");
                     if (className != null) {
                         clazz = JSON.class.getClassLoader().loadClass(className);
@@ -77,8 +84,7 @@ public class JSON {
                     }
                     result = map;
                 } else if (Date.class.isAssignableFrom(clazz)) {
-                    // This is a date - treat it specially an ISO8601 string
-                    // date
+                    // This is a date - grab the isoString property and parse it
                     String isoString = (String) in.get("isoString");
                     try {
                         result = ISO8601_DATE_FORMAT.parseObject(isoString);
@@ -91,6 +97,7 @@ public class JSON {
                     // Otherwise treat as a normal class
                     result = clazz.newInstance();
                     Map<String, Property> properties = SmallPropertyUtils.getProperties(clazz);
+                    // Process each of the properties in turn
                     for (Map.Entry<String, Object> entry : in.entrySet()) {
                         Property property = properties.get(entry.getKey());
                         if (property != null && property.isWriteable()) {
@@ -104,14 +111,17 @@ public class JSON {
                         e.getMessage()), e);
             }
         } else if (json.getClass().isArray()) {
+            // We're dealing with an array, convert all the contained elements
             Object[] in = (Object[]) json;
             if (clazz != null && Collection.class.isAssignableFrom(clazz)) {
+                // Treat the array as a List
                 List<Object> out = new ArrayList<Object>();
                 for (int i = 0; i < in.length; i++) {
                     out.add(fromJson(in[i], null));
                 }
                 result = out;
             } else {
+                // Treat the array as an array
                 Class componentType = Object.class;
                 if (clazz != null)
                     componentType = clazz.getComponentType();
@@ -122,14 +132,17 @@ public class JSON {
                 result = out;
             }
         } else if (json instanceof Collection) {
+            // We're dealing with a list, convert all the contained elements
             Collection in = (Collection) json;
             if (clazz != null && Collection.class.isAssignableFrom(clazz)) {
+                // Treat the list as a list
                 List<Object> out = new ArrayList<Object>();
                 for (Object item : in) {
                     out.add(fromJson(item, null));
                 }
                 result = out;
             } else {
+                // Treat the list as an array
                 Class componentType = Object.class;
                 if (clazz != null)
                     componentType = clazz.getComponentType();
@@ -145,7 +158,7 @@ public class JSON {
             result = json;
         }
 
-        // Plug in deserialization modifiers
+        // Allow plugins to modify results using DeserializationModifiers
         if (result != null) {
             for (DeserializationModifier modifier : DESERIALIZATION_MODIFIERS) {
                 try {
@@ -156,23 +169,36 @@ public class JSON {
             }
         }
 
-        // Now adapt value to target type
+        // Now coerce the result value to the target type
         if (clazz != null) {
             result = SmallPropertyUtils.coerce(result, clazz);
         }
         return (T) result;
     }
 
+    /**
+     * Convert the given value to JSON.
+     * 
+     * @param value
+     * @param whitelist
+     *            - whether or not to use property whitelisting
+     * @return
+     */
     public static Object toJson(Object value, boolean whitelist) {
-        return toJson(value, whitelist, null);
+        return toJson(value, whitelist, new HashMap<String, Object>());
     }
 
-    public static Object toJson(Object value, boolean whitelist, Property property) {
-        return toJson(value, whitelist, property, new HashMap<String, Object>());
-    }
-
-    public static Object toJson(Object value, boolean whitelist, Property property,
-            Map<String, Object> serializationContext) {
+    /**
+     * 
+     * @param value
+     * @param whitelist
+     *            - whether or not to use property whitelisting
+     * @param serializationContext
+     *            - context that plugins can use to store state related to the
+     *            current pass of serialization
+     * @return
+     */
+    private static Object toJson(Object value, boolean whitelist, Map<String, Object> serializationContext) {
         if (value == null) {
             return null;
         }
@@ -181,7 +207,7 @@ public class JSON {
         }
         for (SerializationModifier modifier : SERIALIZATION_MODIFIERS) {
             try {
-                value = modifier.modify(value, property, serializationContext);
+                value = modifier.modify(value, serializationContext);
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage(), e);
             }
@@ -191,21 +217,21 @@ public class JSON {
             Object[] in = (Object[]) value;
             Object[] result = (Object[]) Array.newInstance(clazz.getComponentType(), in.length);
             for (int i = 0; i < in.length; i++) {
-                result[i] = toJson(in[i], whitelist, property, serializationContext);
+                result[i] = toJson(in[i], whitelist, serializationContext);
             }
             return result;
         } else if (value instanceof Collection) {
             Collection in = (Collection) value;
             List<Object> result = new ArrayList<Object>();
             for (Object item : in) {
-                result.add(toJson(item, whitelist, property, serializationContext));
+                result.add(toJson(item, whitelist, serializationContext));
             }
             return result;
         } else if (Map.class.isAssignableFrom(clazz)) {
             // Convert the map
             Map<Object, Object> result = new HashMap<Object, Object>();
             for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) value).entrySet()) {
-                result.put(entry.getKey(), toJson(entry.getValue(), whitelist, property, serializationContext));
+                result.put(entry.getKey(), toJson(entry.getValue(), whitelist, serializationContext));
             }
             return result;
         } else if (Modifier.isFinal(clazz.getModifiers()) || Number.class.isAssignableFrom(clazz)) {
@@ -222,12 +248,11 @@ public class JSON {
             } else {
                 Map<String, Property> properties = SmallPropertyUtils.getProperties(clazz);
                 for (Map.Entry<String, Property> entry : properties.entrySet()) {
-                    property = entry.getValue();
+                    Property property = entry.getValue();
 
                     boolean includeProperty = whitelist ? property.isJsonIncluded() : !property.isJsonExcluded();
                     if (includeProperty) {
-                        result.put(entry.getKey(),
-                                toJson(property.read(value), whitelist, property, serializationContext));
+                        result.put(entry.getKey(), toJson(property.read(value), whitelist, serializationContext));
                     }
                 }
             }
